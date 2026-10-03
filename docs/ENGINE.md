@@ -63,8 +63,9 @@ con estado `PENDING_VERIFICATION`.
   confianza (nunca ALTA). Más antiguas que `MAX_QUOTE_USABLE_HOURS`: no se usan.
 - La antigüedad se mide desde el dato más antiguo entre la hora publicada por la casa
   (`timestamp_source`, p. ej. "Última actualización 02 de Octubre, 10:00") y la hora de
-  captura: un precio publicado ayer y leído hace un minuto sigue siendo de ayer. Esto solo
-  baja la confianza; el filtro de `MAX_QUOTE_USABLE_HOURS` usa la hora de captura.
+  captura: un precio publicado ayer y leído hace un minuto sigue siendo de ayer.
+  `MAX_QUOTE_USABLE_HOURS` también se aplica a la hora publicada: una página que dice
+  "02 de septiembre" no aporta una cotización vigente aunque se haya leído recién.
 
 ## Recorrido físico (Fase 4, `route_optimizer.py`)
 

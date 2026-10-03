@@ -275,6 +275,1163 @@
           "notes": null
         }
       ]
+    },
+    {
+      "slug": "brollano",
+      "name": "Cambios Brollano",
+      "website": "https://www.brollano.cl/",
+      "quotes_url": "http://brollano.cl/index.php/precios/precios-providencia/",
+      "phone": null,
+      "whatsapp": null,
+      "source_url": "https://brollano.cl/index.php/horarios/",
+      "scraper": "brollano",
+      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana). Publica precios por sucursal (Providencia y Agustinas) con fecha; la de Agustinas estaba un mes atrasada al 2026-10-03.",
+      "branches": [
+        {
+          "name": "Agustinas",
+          "address": "Agustinas 1066",
+          "comuna": "Santiago",
+          "phone": "+56 2 2698 3950",
+          "whatsapp": "+56 9 3411 4312",
+          "opening_hours": "Lunes a viernes, de 9:00 a 17:00 horas. Sábado de 10:00 a 14:00 horas.",
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://brollano.cl/index.php/horarios/",
+          "verified": false,
+          "notes": "Precios: /precios/precios-agustinas/",
+          "schedule": {
+            "mon": [
+              "09:00",
+              "17:00"
+            ],
+            "tue": [
+              "09:00",
+              "17:00"
+            ],
+            "wed": [
+              "09:00",
+              "17:00"
+            ],
+            "thu": [
+              "09:00",
+              "17:00"
+            ],
+            "fri": [
+              "09:00",
+              "17:00"
+            ],
+            "sat": [
+              "10:00",
+              "14:00"
+            ]
+          }
+        },
+        {
+          "name": "Providencia",
+          "address": "Av. Providencia 1990",
+          "comuna": "Providencia",
+          "phone": "+56 2 2333 4315",
+          "whatsapp": "+56 9 3411 4315",
+          "opening_hours": "Lunes a viernes, de 9:00 a 17:00 horas. Sábado de 10:00 a 14:00 horas.",
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://brollano.cl/index.php/horarios/",
+          "verified": false,
+          "notes": "Precios: /precios/precios-providencia/",
+          "schedule": {
+            "mon": [
+              "09:00",
+              "17:00"
+            ],
+            "tue": [
+              "09:00",
+              "17:00"
+            ],
+            "wed": [
+              "09:00",
+              "17:00"
+            ],
+            "thu": [
+              "09:00",
+              "17:00"
+            ],
+            "fri": [
+              "09:00",
+              "17:00"
+            ],
+            "sat": [
+              "10:00",
+              "14:00"
+            ]
+          }
+        },
+        {
+          "name": "Vitacura",
+          "address": "Vitacura 6780, local G-8",
+          "comuna": "Vitacura",
+          "phone": "+56 2 2479 3562",
+          "whatsapp": "+56 9 3411 4313",
+          "opening_hours": "Lunes a viernes, de 9:00 a 17:00 horas. Sábado de 10:00 a 14:00 horas.",
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://brollano.cl/index.php/horarios/",
+          "verified": false,
+          "notes": "Sin página de precios",
+          "schedule": {
+            "mon": [
+              "09:00",
+              "17:00"
+            ],
+            "tue": [
+              "09:00",
+              "17:00"
+            ],
+            "wed": [
+              "09:00",
+              "17:00"
+            ],
+            "thu": [
+              "09:00",
+              "17:00"
+            ],
+            "fri": [
+              "09:00",
+              "17:00"
+            ],
+            "sat": [
+              "10:00",
+              "14:00"
+            ]
+          }
+        },
+        {
+          "name": "Las Condes",
+          "address": "Rosario Sur 67",
+          "comuna": "Las Condes",
+          "phone": "+56 2 2211 9780",
+          "whatsapp": "+56 9 3411 4314",
+          "opening_hours": "Lunes a viernes, de 9:00 a 17:00 horas. Sábado de 10:00 a 14:00 horas.",
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://brollano.cl/index.php/horarios/",
+          "verified": false,
+          "notes": "Sin página de precios",
+          "schedule": {
+            "mon": [
+              "09:00",
+              "17:00"
+            ],
+            "tue": [
+              "09:00",
+              "17:00"
+            ],
+            "wed": [
+              "09:00",
+              "17:00"
+            ],
+            "thu": [
+              "09:00",
+              "17:00"
+            ],
+            "fri": [
+              "09:00",
+              "17:00"
+            ],
+            "sat": [
+              "10:00",
+              "14:00"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "slug": "cambio_costero",
+      "name": "Cambio Costero",
+      "website": "https://www.ccostero.cl/",
+      "quotes_url": "https://www.ccostero.cl/",
+      "phone": "+56 2 2696 3008",
+      "whatsapp": null,
+      "source_url": "https://www.ccostero.cl/sucursales/",
+      "scraper": "cambio_costero",
+      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana). Publica solo su precio de venta (referencial); para venderle divisas hay que ir a la oficina.",
+      "branches": [
+        {
+          "name": "Bandera (Casa Matriz)",
+          "address": "Bandera 230",
+          "comuna": "Santiago",
+          "phone": "+56 2 2696 3008",
+          "whatsapp": "+56 9 3181 9842",
+          "opening_hours": "Lunes y Miércoles: 8:30 a 18:30 / Martes, Jueves y Viernes: 8:30 a 17:30",
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://www.ccostero.cl/sucursales/",
+          "verified": false,
+          "notes": null
+        },
+        {
+          "name": "Agustinas local 178",
+          "address": "Agustinas 1022, local 178",
+          "comuna": "Santiago",
+          "phone": null,
+          "whatsapp": "+56 9 8426 9699",
+          "opening_hours": "Lunes y Miércoles: 8:30 a 18:30 / Martes, Jueves y Viernes: 8:30 a 17:30",
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://www.ccostero.cl/sucursales/",
+          "verified": false,
+          "notes": null
+        },
+        {
+          "name": "Agustinas local 186",
+          "address": "Agustinas 1022, local 186",
+          "comuna": "Santiago",
+          "phone": null,
+          "whatsapp": "+56 9 9531 3601",
+          "opening_hours": "Martes y Jueves: 8:30 a 18:30 / Lunes, Miércoles y Viernes: 8:30 a 17:30",
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://www.ccostero.cl/sucursales/",
+          "verified": false,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "slug": "cambios_santiago",
+      "name": "Cambios Santiago",
+      "website": "https://cstgo.cl/",
+      "quotes_url": "https://cstgo.cl/",
+      "phone": "+56 2 2233 1865",
+      "whatsapp": null,
+      "source_url": "https://cstgo.cl/",
+      "scraper": null,
+      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana). Tiene tabla 'VALORES EN TIEMPO REAL' (Compramos/Vendemos) cargada con JavaScript: falta encontrar su fuente para el scraper.",
+      "branches": [
+        {
+          "name": "Providencia",
+          "address": "Av. Pedro de Valdivia 29",
+          "comuna": "Providencia",
+          "phone": "+56 2 2233 1865",
+          "whatsapp": null,
+          "opening_hours": "Mon-Thu: 10:00-18:00; Fri: 10:00-17:00; Sat: 10:00-13:30",
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://cstgo.cl/",
+          "verified": false,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "slug": "echange",
+      "name": "Echange",
+      "website": "https://www.echange.cl/",
+      "quotes_url": null,
+      "phone": "+56 2 2695 0305",
+      "whatsapp": null,
+      "source_url": "https://www.echange.cl/centros-financieros",
+      "scraper": null,
+      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana). No publica precios en su web (tiene app y una página de APIs sin revisar).",
+      "branches": [
+        {
+          "name": "Agustinas",
+          "address": "Agustinas 1111",
+          "comuna": "Santiago",
+          "phone": null,
+          "whatsapp": "+56 9 7547 5963",
+          "opening_hours": "Lun-Vie 08:30-17:30 | Sáb 10:00-14:00 | Dom cerrado",
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://www.echange.cl/centros-financieros",
+          "verified": false,
+          "notes": null
+        },
+        {
+          "name": "Bandera",
+          "address": "Bandera 565",
+          "comuna": "Santiago",
+          "phone": null,
+          "whatsapp": "+56 9 9462 4807",
+          "opening_hours": "Lun-Vie 09:00-19:00 | Sáb 09:00-18:00 | Dom 09:30-16:00",
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://www.echange.cl/centros-financieros",
+          "verified": false,
+          "notes": null
+        },
+        {
+          "name": "San Diego",
+          "address": "San Diego 2155",
+          "comuna": "Santiago",
+          "phone": null,
+          "whatsapp": "+56 9 3010 1954",
+          "opening_hours": "Lun-Vie 09:00-18:00 | Sáb 09:00-17:30 | Dom 09:00-16:00",
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://www.echange.cl/centros-financieros",
+          "verified": false,
+          "notes": null
+        },
+        {
+          "name": "Apumanque",
+          "address": "Apoquindo 5701 (Apumanque)",
+          "comuna": "Las Condes",
+          "phone": null,
+          "whatsapp": "+56 9 5622 9115",
+          "opening_hours": "Lun-Vie 09:00-17:30 | Sáb 10:00-14:00",
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://www.echange.cl/centros-financieros",
+          "verified": false,
+          "notes": null
+        },
+        {
+          "name": "Patio Bellavista",
+          "address": "Bellavista 052, Local 82",
+          "comuna": "Providencia",
+          "phone": null,
+          "whatsapp": "+56 9 3449 1264",
+          "opening_hours": "Lun-Dom 11:00-19:00 (Dom hasta 18:30)",
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://www.echange.cl/centros-financieros",
+          "verified": false,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "slug": "frontera",
+      "name": "Casa de Cambio Frontera (Turismo Frontera)",
+      "website": "http://www.turismofrontera.cl/",
+      "quotes_url": null,
+      "phone": "+56 2 2638 1999",
+      "whatsapp": null,
+      "source_url": "https://wise.com/cl/currency-exchange/santiago",
+      "scraper": null,
+      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana). Website timed out (robots.txt ConnectTimeout).",
+      "branches": [
+        {
+          "name": "Principal",
+          "address": "San Antonio 140, Paseo San Agustín, Local 4",
+          "comuna": "Santiago",
+          "phone": "+56 2 2638 1999",
+          "whatsapp": null,
+          "opening_hours": "Mon-Wed, Fri 9:30–19:30, Thu 9:30–16:30, Sat 10:00–14:00, Sun Closed (per cambiardivisas.com)",
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://wise.com/cl/currency-exchange/santiago",
+          "verified": false,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "slug": "jm_cambios",
+      "name": "JM Cambios",
+      "website": null,
+      "quotes_url": null,
+      "phone": "+56 2 2695 2254",
+      "whatsapp": null,
+      "source_url": "https://wise.com/cl/currency-exchange/santiago",
+      "scraper": null,
+      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana). No website found (jmcambios.cl DNS fails).",
+      "branches": [
+        {
+          "name": "Principal",
+          "address": "Agustinas 1056",
+          "comuna": "Santiago",
+          "phone": "+56 2 2695 2254",
+          "whatsapp": null,
+          "opening_hours": "Mon-Fri 9:00–17:00, Sat-Sun Closed (cambiardivisas); santiagoturismo (older): Mon-Fri 9:00-20:30, Sat 9:30-18:00, Sun 10:00-14:00",
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://wise.com/cl/currency-exchange/santiago",
+          "verified": false,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "slug": "cambios_suiza",
+      "name": "Inversiones Suiza (Casa de Cambios Suiza)",
+      "website": null,
+      "quotes_url": null,
+      "phone": "+56 2 2699 0811",
+      "whatsapp": null,
+      "source_url": "https://wise.com/cl/currency-exchange/santiago",
+      "scraper": null,
+      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana). santiagoturismo lists 'Casa de Cambios Suiza, Agustinas 1032'. No website found.",
+      "branches": [
+        {
+          "name": "Principal",
+          "address": "Agustinas 1036",
+          "comuna": "Santiago",
+          "phone": "+56 2 2699 0811",
+          "whatsapp": null,
+          "opening_hours": null,
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://wise.com/cl/currency-exchange/santiago",
+          "verified": false,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "slug": "money_global",
+      "name": "Money Global Cambios",
+      "website": "http://www.cambiosmoneyglobal.com/",
+      "quotes_url": null,
+      "phone": "+56 2 2697 2117",
+      "whatsapp": null,
+      "source_url": "https://wise.com/cl/currency-exchange/santiago",
+      "scraper": null,
+      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana). Website exists (page 'Casa Matriz Agustinas' found in search) but WebFetch hit redirect loop https->http / connection failure.",
+      "branches": [
+        {
+          "name": "Principal",
+          "address": "Agustinas 1010",
+          "comuna": "Santiago",
+          "phone": "+56 2 2697 2117",
+          "whatsapp": null,
+          "opening_hours": null,
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://wise.com/cl/currency-exchange/santiago",
+          "verified": false,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "slug": "cambios_catedral",
+      "name": "Casas de Cambio Catedral",
+      "website": null,
+      "quotes_url": null,
+      "phone": "+56 9 8837 2227",
+      "whatsapp": null,
+      "source_url": "https://wise.com/cl/currency-exchange/santiago",
+      "scraper": null,
+      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana).",
+      "branches": [
+        {
+          "name": "Principal",
+          "address": "Catedral 1027",
+          "comuna": "Santiago",
+          "phone": "+56 9 8837 2227",
+          "whatsapp": null,
+          "opening_hours": "Mon-Fri 8:30–19:00, Sat 8:30–20:00, Sun 9:00–19:00 (per cambiardivisas.com)",
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://wise.com/cl/currency-exchange/santiago",
+          "verified": false,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "slug": "jc_tour",
+      "name": "Cambios JC Tour",
+      "website": null,
+      "quotes_url": null,
+      "phone": "+56 2 2673 2022",
+      "whatsapp": null,
+      "source_url": "https://wise.com/cl/currency-exchange/santiago",
+      "scraper": null,
+      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana). santiagoturismo phone +56 2 26726373",
+      "branches": [
+        {
+          "name": "Principal",
+          "address": "Moneda 896",
+          "comuna": "Santiago",
+          "phone": "+56 2 2673 2022",
+          "whatsapp": null,
+          "opening_hours": "Mon-Fri 9:00-17:30 (santiagoturismo, older)",
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://wise.com/cl/currency-exchange/santiago",
+          "verified": false,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "slug": "cambios_laser",
+      "name": "Cambios Laser",
+      "website": null,
+      "quotes_url": null,
+      "phone": null,
+      "whatsapp": null,
+      "source_url": "https://www.global66.com/cl/casa-de-cambio/santiago/",
+      "scraper": null,
+      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana). Address differs between sources.",
+      "branches": [
+        {
+          "name": "Principal",
+          "address": "Agustinas 1096",
+          "comuna": "Santiago",
+          "phone": null,
+          "whatsapp": null,
+          "opening_hours": null,
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://www.global66.com/cl/casa-de-cambio/santiago/",
+          "verified": false,
+          "notes": "Otra fuente dice Agustinas 1064."
+        }
+      ]
+    },
+    {
+      "slug": "agustinas_681",
+      "name": "Casa de cambio Agustinas 681",
+      "website": null,
+      "quotes_url": null,
+      "phone": null,
+      "whatsapp": null,
+      "source_url": "https://wise.com/cl/currency-exchange/santiago",
+      "scraper": null,
+      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana). Generic name in Google-derived listing.",
+      "branches": [
+        {
+          "name": "Principal",
+          "address": "Agustinas 681",
+          "comuna": "Santiago",
+          "phone": null,
+          "whatsapp": null,
+          "opening_hours": null,
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://wise.com/cl/currency-exchange/santiago",
+          "verified": false,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "slug": "orion",
+      "name": "Orion Financial Group",
+      "website": null,
+      "quotes_url": null,
+      "phone": null,
+      "whatsapp": null,
+      "source_url": "https://portalcambio.cl/regiones/region-metropolitana-de-santiago/santiago/page/2/",
+      "scraper": null,
+      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana). Listed as casa de cambio by portalcambio.",
+      "branches": [
+        {
+          "name": "Principal",
+          "address": "Agustinas 1035, Of. 13",
+          "comuna": "Santiago",
+          "phone": null,
+          "whatsapp": null,
+          "opening_hours": null,
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://portalcambio.cl/regiones/region-metropolitana-de-santiago/santiago/page/2/",
+          "verified": false,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "slug": "cambios_chile",
+      "name": "Cambios Chile",
+      "website": null,
+      "quotes_url": null,
+      "phone": null,
+      "whatsapp": null,
+      "source_url": "https://2gis.cl/santiago/firm/70000001007406148",
+      "scraper": null,
+      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana).",
+      "branches": [
+        {
+          "name": "Principal",
+          "address": "Paseo Huérfanos 524",
+          "comuna": "Santiago",
+          "phone": null,
+          "whatsapp": null,
+          "opening_hours": null,
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://2gis.cl/santiago/firm/70000001007406148",
+          "verified": false,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "slug": "america_cambios",
+      "name": "América Cambios",
+      "website": null,
+      "quotes_url": null,
+      "phone": "+56 2 6727785",
+      "whatsapp": null,
+      "source_url": "https://www.santiagoturismo.cl/en/exchange-office/",
+      "scraper": null,
+      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana). Only on santiagoturismo (possibly outdated). Solo aparece en santiagoturismo.cl: puede estar desactualizado.",
+      "branches": [
+        {
+          "name": "Principal",
+          "address": "Paseo Ahumada 131, of. 115",
+          "comuna": "Santiago",
+          "phone": "+56 2 6727785",
+          "whatsapp": null,
+          "opening_hours": "Mon-Fri 9:00-18:00",
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://www.santiagoturismo.cl/en/exchange-office/",
+          "verified": false,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "slug": "yanulaque",
+      "name": "Casa de Cambios Yanulaque",
+      "website": null,
+      "quotes_url": null,
+      "phone": "+56 2 6982557",
+      "whatsapp": null,
+      "source_url": "https://www.santiagoturismo.cl/en/exchange-office/",
+      "scraper": null,
+      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana). Only on santiagoturismo (possibly outdated). Solo aparece en santiagoturismo.cl: puede estar desactualizado.",
+      "branches": [
+        {
+          "name": "Principal",
+          "address": "La Bolsa 81, mezzanine",
+          "comuna": "Santiago",
+          "phone": "+56 2 6982557",
+          "whatsapp": null,
+          "opening_hours": "Mon-Fri 9:00-18:30",
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://www.santiagoturismo.cl/en/exchange-office/",
+          "verified": false,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "slug": "costa_brava",
+      "name": "Turismo Costa Brava",
+      "website": null,
+      "quotes_url": null,
+      "phone": "+56 2 23601313",
+      "whatsapp": null,
+      "source_url": "https://www.santiagoturismo.cl/en/exchange-office/",
+      "scraper": null,
+      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana). Only on santiagoturismo (possibly outdated). Solo aparece en santiagoturismo.cl: puede estar desactualizado.",
+      "branches": [
+        {
+          "name": "Principal",
+          "address": "Agustinas 1046",
+          "comuna": "Santiago",
+          "phone": "+56 2 23601313",
+          "whatsapp": null,
+          "opening_hours": "Mon-Fri 9:00-18:00, Sat 9:00-16:00",
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://www.santiagoturismo.cl/en/exchange-office/",
+          "verified": false,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "slug": "punto_peru",
+      "name": "Punto Perú",
+      "website": "puntoperu.cl",
+      "quotes_url": null,
+      "phone": "+56 2 24025451",
+      "whatsapp": null,
+      "source_url": "https://www.santiagoturismo.cl/en/exchange-office/",
+      "scraper": null,
+      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana). Website DNS fails. Only on santiagoturismo (possibly outdated). Solo aparece en santiagoturismo.cl: puede estar desactualizado.",
+      "branches": [
+        {
+          "name": "Principal",
+          "address": "Catedral 1055",
+          "comuna": "Santiago",
+          "phone": "+56 2 24025451",
+          "whatsapp": null,
+          "opening_hours": "Daily 9:00-19:00",
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://www.santiagoturismo.cl/en/exchange-office/",
+          "verified": false,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "slug": "agrex",
+      "name": "Agrex",
+      "website": null,
+      "quotes_url": null,
+      "phone": null,
+      "whatsapp": null,
+      "source_url": "https://www.global66.com/cl/casa-de-cambio/providencia/",
+      "scraper": null,
+      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana). agrex.cl DNS fails.",
+      "branches": [
+        {
+          "name": "Principal",
+          "address": "Av. Pedro de Valdivia 044",
+          "comuna": "Providencia",
+          "phone": null,
+          "whatsapp": null,
+          "opening_hours": null,
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://www.global66.com/cl/casa-de-cambio/providencia/",
+          "verified": false,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "slug": "betaex",
+      "name": "Betaex",
+      "website": null,
+      "quotes_url": null,
+      "phone": null,
+      "whatsapp": null,
+      "source_url": "https://www.global66.com/cl/casa-de-cambio/providencia/",
+      "scraper": null,
+      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana). betaex.cl DNS fails.",
+      "branches": [
+        {
+          "name": "Principal",
+          "address": "Av. Pedro de Valdivia 42, piso 3",
+          "comuna": "Providencia",
+          "phone": null,
+          "whatsapp": null,
+          "opening_hours": null,
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://www.global66.com/cl/casa-de-cambio/providencia/",
+          "verified": false,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "slug": "e_panda",
+      "name": "e-Panda",
+      "website": null,
+      "quotes_url": null,
+      "phone": null,
+      "whatsapp": null,
+      "source_url": "https://portalcambio.cl/regiones/region-metropolitana-de-santiago/providencia-region-metropolitana-de-santiago/",
+      "scraper": null,
+      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana).",
+      "branches": [
+        {
+          "name": "Principal",
+          "address": "Av. Pedro de Valdivia 036",
+          "comuna": "Providencia",
+          "phone": null,
+          "whatsapp": null,
+          "opening_hours": null,
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://portalcambio.cl/regiones/region-metropolitana-de-santiago/providencia-region-metropolitana-de-santiago/",
+          "verified": false,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "slug": "eurocambios",
+      "name": "Eurocambios Providencia",
+      "website": null,
+      "quotes_url": null,
+      "phone": null,
+      "whatsapp": null,
+      "source_url": "https://portalcambio.cl/regiones/region-metropolitana-de-santiago/providencia-region-metropolitana-de-santiago/page/2/",
+      "scraper": null,
+      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana). eurocambios.cl DNS fails.",
+      "branches": [
+        {
+          "name": "Principal",
+          "address": "Av. Nueva Providencia 2222, Local 10",
+          "comuna": "Providencia",
+          "phone": null,
+          "whatsapp": null,
+          "opening_hours": null,
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://portalcambio.cl/regiones/region-metropolitana-de-santiago/providencia-region-metropolitana-de-santiago/page/2/",
+          "verified": false,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "slug": "cambios_liberty",
+      "name": "Cambios Liberty",
+      "website": null,
+      "quotes_url": null,
+      "phone": "(+56 2) 23357113",
+      "whatsapp": null,
+      "source_url": "https://www.cotizacion.co/casas-de-cambio-santiago/",
+      "scraper": null,
+      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana). Only on cotizacion.co (possibly outdated).",
+      "branches": [
+        {
+          "name": "Principal",
+          "address": "Av. Providencia 2653, Edificio Forum L10",
+          "comuna": "Providencia",
+          "phone": "(+56 2) 23357113",
+          "whatsapp": null,
+          "opening_hours": "Lunes a Domingo 10 a 20 Hs.",
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://www.cotizacion.co/casas-de-cambio-santiago/",
+          "verified": false,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "slug": "divisas_azul",
+      "name": "Money Exchange Divisas AZUL",
+      "website": null,
+      "quotes_url": null,
+      "phone": "+56 2 2226 9869",
+      "whatsapp": null,
+      "source_url": "https://wise.com/cl/currency-exchange/santiago",
+      "scraper": null,
+      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana). May be related to Cambios Azul.",
+      "branches": [
+        {
+          "name": "Principal",
+          "address": "Av. Irarrázaval 5201",
+          "comuna": "Ñuñoa",
+          "phone": "+56 2 2226 9869",
+          "whatsapp": null,
+          "opening_hours": null,
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://wise.com/cl/currency-exchange/santiago",
+          "verified": false,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "slug": "brit",
+      "name": "BRIT Money Exchange",
+      "website": null,
+      "quotes_url": null,
+      "phone": null,
+      "whatsapp": null,
+      "source_url": "https://www.global66.com/cl/casa-de-cambio/%C3%B1u%C3%B1oa/",
+      "scraper": null,
+      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana).",
+      "branches": [
+        {
+          "name": "Principal",
+          "address": "Av. Irarrázaval 3971",
+          "comuna": "Ñuñoa",
+          "phone": null,
+          "whatsapp": null,
+          "opening_hours": null,
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://www.global66.com/cl/casa-de-cambio/%C3%B1u%C3%B1oa/",
+          "verified": false,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "slug": "cambios_inter",
+      "name": "Cambios Inter",
+      "website": null,
+      "quotes_url": null,
+      "phone": null,
+      "whatsapp": null,
+      "source_url": "https://www.global66.com/cl/casa-de-cambio/santiago/",
+      "scraper": null,
+      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana). DF 2018 mentions 'Inter de Alto Las Condes'. cambiosinter.cl DNS fails; mercantil lists 'Cambios Inter SA' (Providencia) but mercantil unreachable.",
+      "branches": [
+        {
+          "name": "Principal",
+          "address": "Av. Pdte. Kennedy 5413 (Parque Arauco)",
+          "comuna": "Las Condes",
+          "phone": null,
+          "whatsapp": null,
+          "opening_hours": null,
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://www.global66.com/cl/casa-de-cambio/santiago/",
+          "verified": false,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "slug": "alto_valor",
+      "name": "Alto Valor",
+      "website": null,
+      "quotes_url": null,
+      "phone": null,
+      "whatsapp": null,
+      "source_url": "https://portalcambio.cl/regiones/region-metropolitana-de-santiago/las-condes-region-metropolitana-de-santiago/",
+      "scraper": null,
+      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana). altovalor.cl DNS fails.",
+      "branches": [
+        {
+          "name": "Principal",
+          "address": "Av. Pdte. Kennedy 5601",
+          "comuna": "Las Condes",
+          "phone": null,
+          "whatsapp": null,
+          "opening_hours": "closes 20:00 (portalcambio)",
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://portalcambio.cl/regiones/region-metropolitana-de-santiago/las-condes-region-metropolitana-de-santiago/",
+          "verified": false,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "slug": "cambios_el_golf",
+      "name": "Cambios El Golf",
+      "website": null,
+      "quotes_url": null,
+      "phone": null,
+      "whatsapp": null,
+      "source_url": "https://www.global66.com/cl/casa-de-cambio/las-condes/",
+      "scraper": null,
+      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana).",
+      "branches": [
+        {
+          "name": "Principal",
+          "address": "Av. Apoquindo 3307",
+          "comuna": "Las Condes",
+          "phone": null,
+          "whatsapp": null,
+          "opening_hours": null,
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://www.global66.com/cl/casa-de-cambio/las-condes/",
+          "verified": false,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "slug": "cambios_ventura",
+      "name": "Cambios Ventura",
+      "website": null,
+      "quotes_url": null,
+      "phone": null,
+      "whatsapp": null,
+      "source_url": "https://www.global66.com/cl/casa-de-cambio/las-condes/",
+      "scraper": null,
+      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana).",
+      "branches": [
+        {
+          "name": "Principal",
+          "address": "Av. Manquehue Sur 31, local 368 (Apumanque)",
+          "comuna": "Las Condes",
+          "phone": null,
+          "whatsapp": null,
+          "opening_hours": null,
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://www.global66.com/cl/casa-de-cambio/las-condes/",
+          "verified": false,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "slug": "free_capitals",
+      "name": "Free Capitals",
+      "website": null,
+      "quotes_url": null,
+      "phone": null,
+      "whatsapp": null,
+      "source_url": "https://www.global66.com/cl/casa-de-cambio/las-condes/",
+      "scraper": null,
+      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana).",
+      "branches": [
+        {
+          "name": "Principal",
+          "address": "Av. El Bosque Norte 107",
+          "comuna": "Las Condes",
+          "phone": null,
+          "whatsapp": null,
+          "opening_hours": null,
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://www.global66.com/cl/casa-de-cambio/las-condes/",
+          "verified": false,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "slug": "cambios_cuyehue",
+      "name": "Cambios Cuyehue",
+      "website": null,
+      "quotes_url": null,
+      "phone": null,
+      "whatsapp": null,
+      "source_url": "https://www.global66.com/cl/casa-de-cambio/las-condes/",
+      "scraper": null,
+      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana).",
+      "branches": [
+        {
+          "name": "Principal",
+          "address": "Av. Vitacura 6780, F 5 (Shopping Los Cobres)",
+          "comuna": "Vitacura",
+          "phone": null,
+          "whatsapp": null,
+          "opening_hours": null,
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://www.global66.com/cl/casa-de-cambio/las-condes/",
+          "verified": false,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "slug": "nueva_vitacura",
+      "name": "Casa de Cambio Nueva Vitacura",
+      "website": null,
+      "quotes_url": null,
+      "phone": null,
+      "whatsapp": null,
+      "source_url": "https://www.global66.com/cl/casa-de-cambio/las-condes/",
+      "scraper": null,
+      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana).",
+      "branches": [
+        {
+          "name": "Principal",
+          "address": "Av. Vitacura 6764",
+          "comuna": "Vitacura",
+          "phone": null,
+          "whatsapp": null,
+          "opening_hours": null,
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://www.global66.com/cl/casa-de-cambio/las-condes/",
+          "verified": false,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "slug": "guinazu",
+      "name": "Guiñazú",
+      "website": "https://www.guinazu.cl/",
+      "quotes_url": null,
+      "phone": "+56 2 2481 7311",
+      "whatsapp": null,
+      "source_url": "https://wise.com/cl/currency-exchange/santiago",
+      "scraper": null,
+      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana). Su sitio no respondió desde el entorno de desarrollo; puede publicar precios: revisar desde tu equipo.",
+      "branches": [
+        {
+          "name": "Providencia",
+          "address": "Av. Pedro de Valdivia 048",
+          "comuna": "Providencia",
+          "phone": "+56 2 2481 7311",
+          "whatsapp": null,
+          "opening_hours": null,
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://wise.com/cl/currency-exchange/santiago",
+          "verified": false,
+          "notes": null
+        },
+        {
+          "name": "El Bosque",
+          "address": "Av. El Bosque Norte 0192",
+          "comuna": "Las Condes",
+          "phone": null,
+          "whatsapp": null,
+          "opening_hours": null,
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://www.global66.com/cl/casa-de-cambio/las-condes/",
+          "verified": false,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "slug": "cambios_azul",
+      "name": "Cambios Azul",
+      "website": null,
+      "quotes_url": null,
+      "phone": null,
+      "whatsapp": null,
+      "source_url": "https://www.global66.com/cl/casa-de-cambio/providencia/",
+      "scraper": null,
+      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana). Puede ser la misma empresa que Money Exchange Divisas AZUL (Irarrázaval 5201).",
+      "branches": [
+        {
+          "name": "Las Palmas",
+          "address": "Paseo Las Palmas 2209, local 34",
+          "comuna": "Providencia",
+          "phone": null,
+          "whatsapp": null,
+          "opening_hours": null,
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://www.global66.com/cl/casa-de-cambio/providencia/",
+          "verified": false,
+          "notes": null
+        },
+        {
+          "name": "Chile España",
+          "address": "Av. José Pedro Alessandri 70 (Metro Chile España)",
+          "comuna": "Ñuñoa",
+          "phone": null,
+          "whatsapp": null,
+          "opening_hours": null,
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://www.global66.com/cl/casa-de-cambio/%C3%B1u%C3%B1oa/",
+          "verified": false,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "slug": "global_exchange_scl",
+      "name": "Global Exchange (Aeropuerto)",
+      "website": null,
+      "quotes_url": null,
+      "phone": null,
+      "whatsapp": null,
+      "source_url": "https://www.global-exchange.com.au/currency-exchange-offices/chile/pudahuel-santiago-de-chile/",
+      "scraper": null,
+      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana). Tasas de aeropuerto reportadas mucho peores que en la ciudad.",
+      "branches": [
+        {
+          "name": "Aeropuerto T2",
+          "address": "Aeropuerto Arturo Merino Benítez, Terminal 2 (6 oficinas)",
+          "comuna": "Pudahuel",
+          "phone": null,
+          "whatsapp": null,
+          "opening_hours": "Most offices: 7:00 AM - 11:00 PM; two 24-hour locations: departures airside (Duty Free) and departures public (check-in F-G)",
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://www.global-exchange.com.au/currency-exchange-offices/chile/pudahuel-santiago-de-chile/",
+          "verified": false,
+          "notes": null
+        }
+      ]
     }
   ]
 }

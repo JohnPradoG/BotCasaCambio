@@ -85,3 +85,45 @@ def test_says_no_commission():
     assert says_no_commission("0% comisiones")
     assert not says_no_commission("Comisión 1% sobre el monto")
     assert not says_no_commission("Sin comisiones ocultas")
+
+
+def test_brollano_branch_quotes_and_unlabeled_date(settings):
+    from app.scrapers.exchanges.brollano import PAGES, BrollanoScraper
+
+    scraper = BrollanoScraper(settings)
+    prov = by_currency(scraper.parse((FIXTURES / "brollano_providencia.html").read_text(encoding="utf-8"),
+                                     url=PAGES[0][0], branch="Providencia"))
+    agus = by_currency(scraper.parse((FIXTURES / "brollano_agustinas.html").read_text(encoding="utf-8"),
+                                     url=PAGES[1][0], branch="Agustinas"))
+    assert (prov["USD"].buy_rate, prov["USD"].sell_rate, prov["USD"].branch) == (972, 990, "Providencia")
+    assert prov["ARS"].buy_rate == 0.6 and prov["UYU"].buy_rate is None and prov["UYU"].sell_rate == 30
+    assert "DKK" not in prov and "NZD" in prov  # "–"/"—" = sin precio; el oro no es divisa
+    assert prov["USD"].timestamp_source == datetime(2026, 10, 1, 14, 0, tzinfo=timezone.utc)
+    assert (agus["EUR"].buy_rate, agus["EUR"].sell_rate) == (1078, 1092) and agus["BOB"].sell_rate == 86
+    assert agus["USD"].timestamp_source == datetime(2026, 9, 2, 19, 0, tzinfo=timezone.utc)  # aún UTC-4
+    assert agus["USD"].source_url.endswith("precios-agustinas/") and "SEK" not in agus
+
+
+def test_cambio_costero_is_sell_only(settings):
+    from app.scrapers.exchanges.cambio_costero import CambioCosteroScraper
+
+    q = by_currency(CambioCosteroScraper(settings).parse((FIXTURES / "cambio_costero.html").read_text(encoding="utf-8")))
+    assert set(q) == {"USD", "EUR", "ARS", "BRL", "JPY"}
+    assert (q["USD"].buy_rate, q["USD"].sell_rate) == (None, 988)
+    assert q["EUR"].sell_rate == 1130 and q["ARS"].sell_rate == 0.66 and q["JPY"].sell_rate == 6.9
+
+
+def test_quote_with_old_published_time_is_not_used(engine, settings):
+    from datetime import timedelta
+
+    from app.database.db import session_scope
+    from app.models.quote import NormalizedQuote, utcnow
+    from app.services.opportunity_service import quotes_for_engine
+    from app.services.quote_service import save_quote
+
+    now = utcnow()
+    with session_scope(engine) as s:
+        for house, ts in (("old", now - timedelta(days=31)), ("new", now - timedelta(hours=2))):
+            save_quote(s, NormalizedQuote(house, "USD", 970, 990, "test://", timestamp_source=ts).validate(), None)
+        assert [q.exchange_house for q in quotes_for_engine(s, 24 * 60)] == ["new"]
+        assert len(quotes_for_engine(s, None)) == 2  # sin límite, se ve todo el historial

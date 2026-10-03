@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -50,8 +50,24 @@ def quotes_for_engine(session: Session, max_age_minutes: float | None = None) ->
     """Última cotización por (casa, divisa, sucursal), lista para el motor.
 
     Las más antiguas que ``max_age_minutes`` no se usan para detectar (siguen en el historial).
+    El límite se aplica también a la hora publicada por la casa: un precio que la página
+    dice haber actualizado hace un mes no es una cotización vigente aunque se haya leído recién.
     """
-    return [row_to_quote(r) for r in latest_quotes(session, max_age_minutes)]
+    quotes = [row_to_quote(r) for r in latest_quotes(session, max_age_minutes)]
+    if max_age_minutes is None:
+        return quotes
+    limit = utcnow() - timedelta(minutes=max_age_minutes)
+    usable = []
+    for q in quotes:
+        published = q.timestamp_source
+        if published is not None and published.tzinfo is None:
+            published = published.replace(tzinfo=timezone.utc)
+        if published is not None and published < limit:
+            logger.info("Cotización %s %s%s no usada: publicada %s", q.exchange_house, q.currency,
+                        f" ({q.branch})" if q.branch else "", published.isoformat())
+            continue
+        usable.append(q)
+    return usable
 
 
 def _get_or_create_route(session: Session, route: Route) -> RouteRow:

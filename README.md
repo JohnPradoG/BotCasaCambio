@@ -28,6 +28,8 @@ maximicen el **CLP final neto** partiendo de un capital configurable. El bot sol
 | `manual_csv` | cualquiera (precios ingresados a mano en `data/manual_quotes.csv`) | funcional |
 | `gamaex` | Gamaex (gamaex.cl, Providencia) | **sin verificar en vivo**: tabla HTML estática; columnas "Vendes"/"Compras" (punto de vista del cliente, ya traducidas). La página dice "0% comisiones". |
 | `cambios_lyon` | Cambios Lyon (cambioslyon.cl, 3 sucursales) | **sin verificar en vivo**: tabla HTML estática con hora de actualización publicada. Varias divisas solo tienen precio de compra. |
+| `brollano` | Cambios Brollano (Providencia y Agustinas, una página por sucursal) | **sin verificar en vivo**: tabla HTML con fecha publicada por sucursal; una página con fecha vieja no se usa. |
+| `cambio_costero` | Cambio Costero (3 locales en el centro) | **sin verificar en vivo**: solo publica su precio de venta (la compra queda vacía). |
 | `inmonex` | Inmonex (inmonex.cl, Santiago Centro) | **sin verificar en vivo**: tabla HTML estática, sin hora publicada; la casa negocia la tasa del día en sucursal. |
 | `afex` | AFEX (afex.cl) | **sin verificar**: el sitio carga los precios con JavaScript y no se pudo inspeccionar desde el entorno de desarrollo. Ejecutar `python -m app.main probe afex` en el VPS para confirmarlo o ajustarlo. Desactivado por defecto. |
 
@@ -36,8 +38,10 @@ texto de sus páginas (el entorno de desarrollo no puede descargar sitios .cl), 
 falta probarlos contra el HTML real: `python -m app.main scrape --only gamaex` (y lo mismo
 con `cambios_lyon` e `inmonex`). Si devuelven cotizaciones, agrégalos a `ENABLED_SCRAPERS`.
 
-More Exchange (moreexchange.cl) está registrada con sus sucursales, pero carga los precios
-con JavaScript y todavía no tiene scraper; sus precios pueden ir en `data/manual_quotes.csv`.
+More Exchange (moreexchange.cl) y Cambios Santiago (cstgo.cl) publican precios, pero los cargan
+con JavaScript y todavía no tienen scraper. Las demás casas registradas (40 en total, la
+mayoría en el centro) no publican precios en internet: sus precios se cargan con `/precio`
+o `add-quote`.
 
 Los datos de casas en `data/exchange_houses.json` vienen de fuentes públicas, con su
 `source_url`. Lo que no se pudo confirmar queda en `null` y con `verified: false`.
