@@ -183,5 +183,7 @@ def test_probe_site_finds_static_rates_and_errors(settings):
     html = (FIXTURES / "inmonex.html").read_text(encoding="utf-8")
     ok = probe_site("https://x.cl/", s, use_browser=False, fetcher=_Fetcher(s, session=_Sess({"https://x.cl/": html})))
     assert ok["static_rates"] == 5 and ok["static_sample"][0].startswith("USD")
+    no_scheme = probe_site("x.cl/", s, use_browser=False, fetcher=_Fetcher(s, session=_Sess({"https://x.cl/": html})))
+    assert no_scheme["url"] == "https://x.cl/" and "error" not in no_scheme
     bad = probe_site("https://y.cl/", s, use_browser=False, fetcher=_Fetcher(s, session=_Sess({})))
     assert "error" in bad

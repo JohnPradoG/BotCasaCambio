@@ -40,6 +40,8 @@ def _sample(rates: list[RawRate], n: int = 4) -> list[str]:
 def probe_site(url: str, settings: Settings, use_browser: bool, fetcher: BaseScraper | None = None,
                save_dir: Path | None = None) -> dict:
     fetcher = fetcher or _Fetcher(settings)
+    if "://" not in url:
+        url = f"https://{url}"
     result: dict = {"url": url}
     try:
         resp = fetcher.http_get(url)
