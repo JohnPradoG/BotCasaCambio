@@ -72,7 +72,11 @@ con estado `PENDING_VERIFICATION`.
 2. Se elige la sucursal de cada visita que minimiza la distancia total (programación dinámica).
 3. Distancia: OSRM si `OSRM_URL` está configurado; si no, línea recta × `ROUTE_DISTANCE_FACTOR`.
    Tiempo = traslado (velocidad del modo) + `MINUTES_PER_OPERATION` por operación.
-4. Transporte se descuenta de la ganancia neta y luego se reordena el Top.
+4. Transporte se descuenta de la ganancia neta y luego se reordena el Top. Se cobra un viaje
+   por cada cambio de casa y, con `TRANSPORT_FROM_HOME=true`, la ida desde el origen y la vuelta
+   (también sin coordenadas: el número de viajes se conoce aunque los km no).
+   `TRANSPORT_ALT_COST_PER_TRIP_CLP` muestra cuánto quedaría con otro medio (p. ej. taxi), sin
+   cambiar el ranking.
 5. Horario: si alguna casa está cerrada al llegar, `executable_now = false` (bandera
    `HOUSE_CLOSED`); si no hay horario publicado, `null` (`HOURS_UNKNOWN`).
 6. Sin coordenadas: `DISTANCE_UNKNOWN`, transporte 0 y menos confianza.

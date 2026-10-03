@@ -131,8 +131,11 @@ Toda la configuración vive en `.env` (ver `.env.example`, comentado). Un valor 
 | Scrapers activos | `ENABLED_SCRAPERS` | `manual_csv` |
 | Base de datos | `DATABASE_URL` | SQLite en `data/arbitraje.db` |
 
-Ejemplo de transporte en taxi: `TRANSPORT_MODE=taxi`, `TRANSPORT_COST_PER_KM=1300`,
-`TRANSPORT_FIXED_COST_PER_TRIP_CLP=500`. Estos valores son ejemplos: pon los tuyos.
+Ejemplo en metro, saliendo de casa: `TRANSPORT_FIXED_COST_PER_TRIP_CLP=900`. Una ruta con dos
+casas cuesta 3 pasajes (casa → A, A → B, B → casa), aunque falten coordenadas
+(`TRANSPORT_FROM_HOME=true`). Para ver también cuánto quedaría en taxi, sin cambiar el ranking:
+`TRANSPORT_ALT_COST_PER_TRIP_CLP=5000`. Las coordenadas de tu casa se obtienen con
+`python scripts/geocode_branches.py --origin "Calle 123, Comuna"` y van en `ORIGIN_LAT`/`ORIGIN_LON`.
 
 Para pasar a PostgreSQL: `pip install "psycopg[binary]"` y
 `DATABASE_URL=postgresql+psycopg://usuario:clave@host:5432/arbitraje`.

@@ -97,7 +97,7 @@ function routeCard(r) {
       <span>${r.currencies.join(" → ")}</span>
       <span class="${r.confidence}">Confianza ${CONF[r.confidence] || "—"} ${r.confidence_score != null ? "(" + Math.round(r.confidence_score) + "/100)" : ""}</span></div>
     <div class="row muted"><span>CLP final neto ${clp(r.net_final_clp)}</span><span>Bruta ${clp(r.gross_profit_clp, true)}</span>
-      <span>Comisiones -${clp(r.commissions_clp)}</span><span>Margen -${clp(r.safety_margin_clp)}</span><span>Transporte -${clp(r.transport_clp)}</span>
+      <span>Comisiones -${clp(r.commissions_clp)}</span><span>Margen -${clp(r.safety_margin_clp)}</span><span>Transporte -${clp(r.transport_clp)}</span>${r.alt_transport ? `<span>En ${r.alt_transport.label}: ${clp(r.alt_transport.net_profit_clp, true)}</span>` : ''}
       <span>${r.distance_km == null ? "distancia desconocida" : r.distance_km.toFixed(1) + " km"}</span>
       <span>${r.estimated_minutes == null ? "" : Math.round(r.estimated_minutes) + " min"}</span>
       <span>${r.executable_now === false ? "⏰ casa cerrada" : r.executable_now ? "abierto ahora" : "horario desconocido"}</span></div>

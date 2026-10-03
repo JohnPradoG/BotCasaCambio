@@ -111,20 +111,33 @@ def enrich_routes(
             for i in stop.step_indexes:
                 route.route[i].branch_used = branch.name if branch else route.route[i].branch
 
+        home = settings.transport_from_home
         if known:
-            km = sum(leg.km for _, _, leg, _ in legs)
-            travel_min = sum(leg.minutes for _, _, leg, _ in legs)
+            trip_legs = list(legs)
+            if home and origin and chosen:
+                # Vuelta a casa desde la última sucursal (cuenta en km y costo, no en el horario).
+                trip_legs.append((chosen[-1].name, "origen", provider.leg(_coords(chosen[-1]), origin), None))
+            km = sum(leg.km for _, _, leg, _ in trip_legs)
+            travel_min = sum(leg.minutes for _, _, leg, _ in trip_legs)
             route.distance_km = round(km, 2)
             route.legs = [
-                {"from": a, "to": f"{b.name}", "km": round(leg.km, 2), "minutes": round(leg.minutes, 1), "source": leg.source}
-                for a, b, leg, _ in legs
+                {"from": a, "to": b if isinstance(b, str) else b.name, "km": round(leg.km, 2),
+                 "minutes": round(leg.minutes, 1), "source": leg.source}
+                for a, b, leg, _ in trip_legs
             ]
-            route.transport_clp = transport_cost(km, len(legs), settings)
+            between = sum(1 for a, *_ in legs if a != "origen")
+            trips = between + 2 if home else len(trip_legs)
+            route.transport_clp = transport_cost(km, trips, settings)
+            route.trips = trips
         else:
             travel_min = None
             route.distance_km = None
             route.legs = []
-            route.transport_clp = 0.0
+            # Sin coordenadas no hay km, pero sí se sabe cuántos viajes hay: un pasaje por cada
+            # cambio de casa, más la ida y la vuelta si se sale desde casa.
+            trips = max(len(stops) - 1, 0) + (2 if home else 0)
+            route.transport_clp = transport_cost(0.0, trips, settings)
+            route.trips = trips
             flags.add("DISTANCE_UNKNOWN")
 
         service_min = route.steps * settings.minutes_per_operation
@@ -150,6 +163,13 @@ def enrich_routes(
             flags.add("HOURS_UNKNOWN")
 
         route.net_profit_clp -= route.transport_clp
+        alt = settings.transport_alt_cost_per_trip_clp
+        if alt is not None and route.trips:
+            alt_cost = route.trips * alt
+            route.alt_transport = {
+                "label": settings.transport_alt_label, "cost_per_trip": alt, "transport_clp": alt_cost,
+                "net_profit_clp": route.net_profit_clp + route.transport_clp - alt_cost,
+            }
         route.profit_percent = route.net_profit_clp / route.initial_clp * 100
         route.flags = sorted(flags)
 

@@ -112,6 +112,11 @@ def format_alert_route(route: Route, directory: dict[str, ExchangeHouse], detail
         "",
         f"Ganancia bruta: {clp(route.gross_profit_clp, sign=True)} · Comisiones: -{clp(route.commissions_clp)} · "
         f"Margen: -{clp(route.safety_margin_clp)} · Transporte: -{clp(route.transport_clp)}",
+    ]
+    if route.alt_transport:
+        a = route.alt_transport
+        lines.append(f"Si vas en {a['label']}: {clp(a['net_profit_clp'], sign=True)} CLP")
+    lines += [
         "",
         "Distancia total:",
         "desconocida (faltan coordenadas)" if route.distance_km is None else f"{route.distance_km:.1f} km".replace(".", ","),

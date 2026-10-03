@@ -130,10 +130,39 @@ def test_9_transport_cost_is_deducted_from_net_profit():
     quotes = [q("a", "USD", 930, 950), q("b", "USD", 980, 1000)]
     free = run(quotes, directory)[0]
     paid = run(quotes, directory, transport_cost_per_km=500, transport_fixed_cost_per_trip_clp=800)[0]
-    expected = paid.distance_km * 500 + 800
+    expected = paid.distance_km * 500 + 3 * 800  # ida desde casa, A → B y vuelta
     assert paid.transport_clp == pytest.approx(expected, rel=1e-3)
     assert paid.net_profit_clp == pytest.approx(free.net_profit_clp - paid.transport_clp)
     assert paid.gross_profit_clp == pytest.approx(free.gross_profit_clp)
+
+
+def test_metro_fares_without_coordinates():
+    # Metro a $900 por viaje: casa → A, A → B, B → casa = 3 pasajes, aunque falten coordenadas.
+    quotes = [q("a", "USD", 930, 950), q("b", "USD", 980, 1000)]
+    [route] = run(quotes, transport_fixed_cost_per_trip_clp=900)
+    assert route.transport_clp == 2700 and "DISTANCE_UNKNOWN" in route.flags
+    [route] = run(quotes, transport_fixed_cost_per_trip_clp=900, transport_from_home=False)
+    assert route.transport_clp == 900  # solo el traslado entre casas
+
+
+def test_taxi_alternative_is_informative_only():
+    quotes = [q("a", "USD", 930, 950), q("b", "USD", 980, 1000)]
+    metro = run(quotes, transport_fixed_cost_per_trip_clp=900)[0]
+    both = run(quotes, transport_fixed_cost_per_trip_clp=900, transport_alt_cost_per_trip_clp=5000)[0]
+    assert both.net_profit_clp == pytest.approx(metro.net_profit_clp)  # no cambia la ganancia ni el ranking
+    assert both.trips == 3 and both.alt_transport["transport_clp"] == 15000
+    assert both.alt_transport["net_profit_clp"] == pytest.approx(metro.net_profit_clp + 2700 - 15000)
+    from app.services.report import format_top
+
+    assert "Si vas en taxi ($5.000 por viaje):" in format_top([both], CAPITAL)
+
+
+def test_return_home_leg_with_origin():
+    directory = {"a": house("a", -33.4372, -70.6506), "b": house("b", -33.4500, -70.6600)}
+    quotes = [q("a", "USD", 930, 950), q("b", "USD", 980, 1000)]
+    [route] = run(quotes, directory, origin_lat=-33.44, origin_lon=-70.65, transport_fixed_cost_per_trip_clp=900)
+    assert [leg["to"] for leg in route.legs] == ["Centro", "Centro", "origen"]
+    assert route.transport_clp == 2700
 
 
 def test_transport_can_change_the_order():

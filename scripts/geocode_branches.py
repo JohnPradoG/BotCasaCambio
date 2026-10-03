@@ -4,6 +4,9 @@ Uso (en tu VPS o computador, con Internet):
 
     python scripts/geocode_branches.py            # muestra lo que encontraría
     python scripts/geocode_branches.py --write    # guarda las coordenadas en el JSON
+    python scripts/geocode_branches.py --origin "Calle 123, Comuna"   # ORIGIN_LAT/LON para .env
+
+La dirección de origen (tu casa) solo se imprime: cópiala a tu .env, que no se sube al repositorio.
 
 Respeta la política de uso de Nominatim: 1 consulta por segundo y User-Agent
 identificable. Solo completa sucursales SIN coordenadas y deja una nota con la
@@ -41,7 +44,16 @@ def geocode(address: str, comuna: str | None) -> tuple[float, float, str] | None
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--write", action="store_true")
+    parser.add_argument("--origin", help="dirección de partida; imprime ORIGIN_LAT/ORIGIN_LON para .env")
     args = parser.parse_args()
+    if args.origin:
+        result = geocode(args.origin, None)
+        if result is None:
+            print(f"✗ sin resultado para {args.origin!r}; prueba agregando la comuna")
+            return 1
+        lat, lon, label = result
+        print(f"Encontrado: {label}\nORIGIN_LAT={lat:.6f}\nORIGIN_LON={lon:.6f}")
+        return 0
     doc = json.loads(FILE.read_text(encoding="utf-8"))
     changed = 0
     for house in doc.get("exchange_houses", []):

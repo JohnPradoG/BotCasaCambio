@@ -207,6 +207,8 @@ class Route:
     executable_now: bool | None = None  # None = horario desconocido
     warnings: list[str] = field(default_factory=list)
     legs: list[dict] = field(default_factory=list)  # tramos de traslado entre sucursales
+    trips: int | None = None  # viajes contados para el transporte
+    alt_transport: dict | None = None  # {"label", "cost_per_trip", "transport_clp", "net_profit_clp"}
     edges: tuple[Edge, ...] = field(default=(), repr=False)
     stored_signature: str | None = None  # para rutas reconstruidas desde la BD (sin aristas)
 
@@ -234,6 +236,8 @@ class Route:
             "commissions_clp": self.commissions_clp,
             "safety_margin_clp": self.safety_margin_clp,
             "transport_clp": self.transport_clp,
+            "trips": self.trips,
+            "alt_transport": self.alt_transport,
             "net_profit_clp": self.net_profit_clp,
             "profit_percent": self.profit_percent,
             "steps": self.steps,

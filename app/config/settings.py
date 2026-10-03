@@ -53,6 +53,13 @@ class Settings(BaseSettings):
     transport_mode: str = "public_transport"  # walk | public_transport | car | taxi
     transport_cost_per_km: float = Field(0.0, ge=0)
     transport_fixed_cost_per_trip_clp: float = Field(0.0, ge=0)  # p. ej. pasaje o bajada de bandera
+    # True: se cobra también el viaje de ida a la primera casa y el de vuelta desde la última
+    # (sales de ORIGIN_LAT/ORIGIN_LON y vuelves ahí), aunque falten coordenadas.
+    transport_from_home: bool = True
+    # Costo alternativo por viaje (p. ej. taxi) solo para mostrar "si vas en taxi quedaría...".
+    # No cambia el ranking ni la ganancia neta. Vacío = no se muestra.
+    transport_alt_cost_per_trip_clp: float | None = Field(None, ge=0)
+    transport_alt_label: str = "taxi"
     # Velocidad promedio (km/h) por modo. Vacío = valor por defecto del modo.
     transport_speed_kmh: float | None = None
     # Factor ciudad: distancia real ≈ línea recta × factor (cuando no hay OSRM).

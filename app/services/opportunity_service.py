@@ -124,4 +124,5 @@ def route_from_row(opp: OpportunityRow) -> Route:
         estimated_minutes=d.get("estimated_minutes"), confidence=d.get("confidence"),
         confidence_score=d.get("confidence_score"), executable_now=d.get("executable_now"),
         warnings=d.get("warnings", []), legs=d.get("legs", []), stored_signature=d.get("signature"),
+        trips=d.get("trips"), alt_transport=d.get("alt_transport"),
     )

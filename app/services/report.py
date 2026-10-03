@@ -42,9 +42,13 @@ def format_route(route: Route, detailed: bool = True) -> str:
             f"Ganancia bruta: {clp(route.gross_profit_clp, sign=True)}",
             f"Comisiones: {'-' + clp(route.commissions_clp)}",
             f"Margen de seguridad: {'-' + clp(route.safety_margin_clp)}",
-            f"Transporte: {'-' + clp(route.transport_clp)}",
-            "",
+            f"Transporte: {'-' + clp(route.transport_clp)}" + (f" ({route.trips} viajes)" if route.trips else ""),
         ]
+        if route.alt_transport:
+            a = route.alt_transport
+            lines.append(f"Si vas en {a['label']} ({clp(a['cost_per_trip'])} por viaje): "
+                         f"{clp(a['net_profit_clp'], sign=True)} neto")
+        lines += [""]
         for s in route.route:
             label = "compra" if s.rate_used == "buy_rate" else "venta"
             lines.append(
