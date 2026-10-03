@@ -1,0 +1,70 @@
+{
+  "_comment": "Registro manual de casas de cambio. Solo datos tomados de fuentes públicas, con su source_url. Campo desconocido = null. 'verified': true solo cuando un humano lo confirmó.",
+  "exchange_houses": [
+    {
+      "slug": "afex",
+      "name": "AFEX",
+      "website": "https://www.afex.cl",
+      "quotes_url": "https://www.afex.cl/",
+      "phone": null,
+      "whatsapp": null,
+      "source_url": "https://www.afex.cl/",
+      "scraper": "afex",
+      "notes": "Sucursales tomadas de la portada de afex.cl el 2026-10-03 (lectura automática, pendiente de verificación humana). La portada lista más sucursales; aquí solo las de Santiago que se pudieron leer.",
+      "branches": [
+        {
+          "name": "Catedral Plaza de Armas",
+          "address": "Catedral 1063",
+          "comuna": null,
+          "phone": null,
+          "whatsapp": null,
+          "opening_hours": "Publicado: abierta hasta 20:00 (sin días ni hora de apertura)",
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://www.afex.cl/",
+          "verified": false,
+          "notes": null
+        },
+        {
+          "name": "Agustinas",
+          "address": "Agustinas 1050",
+          "comuna": null,
+          "phone": null,
+          "whatsapp": null,
+          "opening_hours": "Publicado: cierra 18:00 (sin días ni hora de apertura)",
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://www.afex.cl/",
+          "verified": false,
+          "notes": null
+        },
+        {
+          "name": "Providencia",
+          "address": "Av. Pedro de Valdivia 012",
+          "comuna": null,
+          "phone": null,
+          "whatsapp": null,
+          "opening_hours": null,
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://www.afex.cl/",
+          "verified": false,
+          "notes": "El nombre de la sucursal es 'Providencia'; la comuna no está publicada explícitamente."
+        },
+        {
+          "name": "Mall Costanera Center",
+          "address": "Nueva Tobalaba 12, local 150",
+          "comuna": null,
+          "phone": null,
+          "whatsapp": null,
+          "opening_hours": "Publicado: abierta hasta 20:00 (sin días ni hora de apertura)",
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://www.afex.cl/",
+          "verified": false,
+          "notes": null
+        }
+      ]
+    }
+  ]
+}
