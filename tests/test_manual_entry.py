@@ -71,3 +71,22 @@ def test_telegram_commands_only_from_configured_chat(tmp_path):
     assert len(rows) == 1 and rows[0]["source_url"] == "telegram:42"
     assert (tmp_path / "offset.txt").read_text() == "4"
     assert "Formato" in poller.handle("/precio gamaex")
+
+
+def test_price_request_links():
+    from app.models.exchange_house import Branch, ExchangeHouse
+    from app.services.price_requests import build_price_request
+
+    houses = [
+        ExchangeHouse(slug="wa", name="Con WhatsApp", branches=[Branch(name="Centro", whatsapp="+56 9 1111 2222")]),
+        ExchangeHouse(slug="movil", name="Solo móvil", branches=[Branch(name="Centro", phone="+56 9 3333 4444")]),
+        ExchangeHouse(slug="fijo", name="Solo fijo", branches=[Branch(name="Centro", phone="+56 2 2695 2254")]),
+        ExchangeHouse(slug="nada", name="Sin contacto", branches=[Branch(name="Centro")]),
+        ExchangeHouse(slug="fresca", name="Con precio", branches=[Branch(name="Centro", whatsapp="+56 9 5555 6666")]),
+    ]
+    text = build_price_request(houses, {"fresca"}, Settings(_env_file=None, price_request_currencies="USD,EUR"))
+    assert "https://wa.me/56911112222?text=Hola%2C%20%C2%BFa%20cu%C3%A1nto" in text
+    assert "wa.me/56933334444" in text and "puede no tener WhatsApp" in text
+    assert "llamar al +56 2 2695 2254" in text
+    assert "Sin contacto" not in text and "Con precio" not in text
+    assert build_price_request(houses[3:], {"fresca"}, Settings(_env_file=None)) is None

@@ -5,6 +5,7 @@
     python -m app.main quotes               # últimas cotizaciones guardadas
     python -m app.main houses               # casas descubiertas / con cotización / sin datos
     python -m app.main scrapers             # scrapers disponibles y su estado
+    python -m app.main price-requests       # enlaces de WhatsApp para pedir precios a casas sin web
     python -m app.main probe-all            # revisa todas las webs de casas (reporte para ajustar scrapers)
     python -m app.main probe afex           # diagnóstico de un sitio para ajustar su scraper
     python -m app.main analyze [--capital 5000000 --steps 4 --top 5 --save]
@@ -197,6 +198,52 @@ def make_command_poller():
     return TelegramCommandPoller(settings, handlers)
 
 
+def _price_request_text() -> str | None:
+    from app.services.house_service import load_houses_file
+    from app.services.opportunity_service import quotes_for_engine
+    from app.services.price_requests import build_price_request
+
+    settings = get_settings()
+    init_db()
+    with session_scope() as s:
+        fresh = {q.exchange_house for q in quotes_for_engine(s, settings.max_quote_usable_hours * 60)}
+    houses = load_houses_file(settings.houses_file) if Path(settings.houses_file).exists() else []
+    return build_price_request(houses, fresh, settings)
+
+
+def _maybe_send_price_request(notifier) -> None:
+    """Envía el pedido diario una vez al día, a partir de PRICE_REQUEST_TIME (hora local)."""
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    settings = get_settings()
+    if not settings.price_request_time:
+        return
+    now = datetime.now(ZoneInfo(settings.timezone))
+    marker = DATA_DIR / "price_request_sent.txt"
+    try:
+        last = marker.read_text().strip()
+    except OSError:
+        last = ""
+    if last == now.date().isoformat() or now.strftime("%H:%M") < settings.price_request_time:
+        return
+    text = _price_request_text()
+    if text and notifier.send(text):
+        marker.write_text(now.date().isoformat())
+
+
+def cmd_price_requests(args) -> int:
+    text = _price_request_text()
+    if not text:
+        print("Todas las casas con contacto tienen precio reciente.")
+        return 0
+    print(text)
+    if args.send:
+        ok = make_notifier(get_settings()).send(text)
+        print("Enviado por Telegram" if ok else "No se pudo enviar")
+    return 0
+
+
 def cmd_loop(args) -> int:
     interval = args.interval or get_settings().loop_interval_seconds
     poller = make_command_poller()  # con Telegram configurado, atiende /precio mientras espera
@@ -205,6 +252,10 @@ def cmd_loop(args) -> int:
             _cycle(argparse.Namespace(), scrape=True, save=True, alert=True)
         except Exception:  # noqa: BLE001 - el bucle no debe morir
             logger.exception("Error en el ciclo")
+        try:
+            _maybe_send_price_request(make_notifier(get_settings()))
+        except Exception:  # noqa: BLE001
+            logger.exception("Error enviando el pedido diario de precios")
         if poller is None:
             time.sleep(interval)
         else:
@@ -354,6 +405,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.set_defaults(func=cmd_quotes)
     sub.add_parser("houses").set_defaults(func=cmd_houses)
     sub.add_parser("scrapers").set_defaults(func=cmd_scrapers)
+    p = sub.add_parser("price-requests", help="enlaces de WhatsApp para pedir precios a casas sin web")
+    p.add_argument("--send", action="store_true", help="enviar también por Telegram")
+    p.set_defaults(func=cmd_price_requests)
     p = sub.add_parser("probe-all", help="revisa todas las webs de casas y deja data/probe/report.json")
     p.add_argument("--no-browser", action="store_true")
     p.set_defaults(func=cmd_probe_all)
