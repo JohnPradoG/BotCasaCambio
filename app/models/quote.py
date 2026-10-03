@@ -48,6 +48,7 @@ class NormalizedQuote:
     branch: str | None = None  # si la cotización aplica solo a una sucursal
     notes: str | None = None
     flags: set[QuoteFlag] = field(default_factory=set)
+    quote_id: int | None = None  # id en la tabla quotes, cuando viene de la BD
 
     @property
     def commission_unknown(self) -> bool:

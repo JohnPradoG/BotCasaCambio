@@ -1,0 +1,98 @@
+"""Conecta el motor con la base de datos: carga cotizaciones y guarda rutas/oportunidades."""
+
+from __future__ import annotations
+
+import logging
+
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from app.database.models import OpportunityRow, QuoteRow, RouteRow, RouteStepRow
+from app.models.opportunity import OpportunityStatus
+from app.models.quote import NormalizedQuote, QuoteFlag
+from app.services.arbitrage_engine import Route
+from app.services.house_service import ensure_house
+from app.services.quote_service import latest_quotes
+
+logger = logging.getLogger(__name__)
+
+
+def row_to_quote(row: QuoteRow) -> NormalizedQuote:
+    flags = set()
+    for f in row.flags or []:
+        try:
+            flags.add(QuoteFlag(f))
+        except ValueError:
+            continue
+    return NormalizedQuote(
+        exchange_house=row.house.slug,
+        currency=row.currency,
+        quote_currency=row.quote_currency,
+        buy_rate=row.buy_rate,
+        sell_rate=row.sell_rate,
+        source_url=row.source_url,
+        timestamp_source=row.timestamp_source,
+        timestamp_collected=row.timestamp_collected,
+        availability=row.availability,
+        min_amount=row.min_amount,
+        max_amount=row.max_amount,
+        commission_fixed=row.commission_fixed,
+        commission_percent=row.commission_percent,
+        branch=row.branch,
+        notes=row.notes,
+        flags=flags,
+        quote_id=row.id,
+    )
+
+
+def quotes_for_engine(session: Session, max_age_minutes: int | None = None) -> list[NormalizedQuote]:
+    """Última cotización por (casa, divisa, sucursal), lista para el motor."""
+    return [row_to_quote(r) for r in latest_quotes(session, max_age_minutes)]
+
+
+def _get_or_create_route(session: Session, route: Route) -> RouteRow:
+    signature = route.signature
+    row = session.scalar(select(RouteRow).where(RouteRow.signature == signature))
+    if row is not None:
+        return row
+    row = RouteRow(signature=signature, currencies=route.currencies, steps=route.steps)
+    for step in route.route:
+        house = ensure_house(session, step.house)
+        row.route_steps.append(RouteStepRow(
+            position=step.position, exchange_house_id=house.id,
+            from_currency=step.from_currency, to_currency=step.to_currency,
+        ))
+    session.add(row)
+    session.flush()
+    return row
+
+
+def save_routes(session: Session, routes: list[Route]) -> list[OpportunityRow]:
+    """Guarda cada ruta como oportunidad (SPEC §23: se guardan aunque no generen alerta)."""
+    saved = []
+    for route in routes:
+        route_row = _get_or_create_route(session, route)
+        status = OpportunityStatus.PENDING_VERIFICATION if route.requires_verification else OpportunityStatus.DETECTED
+        opp = OpportunityRow(
+            route_id=route_row.id,
+            initial_clp=route.initial_clp,
+            final_clp=route.final_clp,
+            gross_profit_clp=route.gross_profit_clp,
+            commissions_clp=route.commissions_clp,
+            transport_clp=route.transport_clp,
+            safety_margin_clp=route.safety_margin_clp,
+            net_profit_clp=route.net_profit_clp,
+            profit_percent=route.profit_percent,
+            rank=route.rank,
+            distance_km=route.distance_km,
+            estimated_minutes=route.estimated_minutes,
+            confidence=route.confidence,
+            status=status.value,
+            quote_ids=[s.quote_id for s in route.route if s.quote_id is not None],
+            details=route.to_dict(),
+        )
+        session.add(opp)
+        saved.append(opp)
+    session.flush()
+    logger.info("%d oportunidades guardadas", len(saved))
+    return saved

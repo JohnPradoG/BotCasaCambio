@@ -23,7 +23,10 @@ app/
 ├── services/
 │   ├── quote_service.py       ejecuta scrapers, marca anomalías, guarda todo el historial
 │   ├── anomaly_service.py     ANOMALOUS_QUOTE (SPEC §35)
-│   └── house_service.py       registro manual de casas y estadísticas (SPEC §44)
+│   ├── house_service.py       registro manual de casas y estadísticas (SPEC §44)
+│   ├── arbitrage_engine.py    grafo, búsqueda de rutas, ganancia neta, Top N (ver ENGINE.md)
+│   ├── opportunity_service.py cotizaciones de la BD → motor → oportunidades guardadas
+│   └── report.py              texto del Top N (formato SPEC §46)
 └── database/
     ├── db.py                  engine/sesiones; SQLite ahora, PostgreSQL vía DATABASE_URL
     └── models.py              todas las tablas del SPEC §30 (+ branches)
@@ -44,7 +47,7 @@ scrapers (aislados) ──► NormalizedQuote.validate() ──► detect_anomal
 
 | Fase | Módulos nuevos |
 |------|----------------|
-| 2 | `services/arbitrage_engine.py` (grafo de aristas por casa, rutas 1..MAX_STEPS, CLP intermedio, ciclos), `find_best_routes()` |
+| 2 ✅ | `services/arbitrage_engine.py` (grafo de aristas por casa, rutas 1..MAX_STEPS, CLP intermedio, ciclos), `find_best_routes()` |
 | 3 | comisiones (publicadas o `DEFAULT_COMMISSION_*`), disponibilidad, montos mín/máx, cotizaciones antiguas, Top N |
 | 4 | `services/distance_service.py` (interfaz con implementación Haversine y OSRM), transporte, `confidence_service.py` |
 | 5 | `notifications/telegram.py`, mensajes de verificación por WhatsApp/teléfono |

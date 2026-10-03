@@ -6,13 +6,14 @@ maximicen el **CLP final neto** partiendo de un capital configurable. El bot sol
 
 - Especificación completa: [`docs/SPEC.md`](docs/SPEC.md)
 - Arquitectura y decisiones: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
+- Motor de rutas: [`docs/ENGINE.md`](docs/ENGINE.md)
 
 ## Estado
 
 | Fase | Contenido | Estado |
 |------|-----------|--------|
-| 1 | Arquitectura, configuración, BD, modelos, cotizaciones, scraper base, primer scraper, normalización | ✅ este PR |
-| 2 | Grafo, conversiones, rutas 1-5 pasos, CLP intermedio, ciclos, ganancia | pendiente |
+| 1 | Arquitectura, configuración, BD, modelos, cotizaciones, scraper base, primer scraper, normalización | ✅ |
+| 2 | Grafo, conversiones, rutas 1-5 pasos, CLP intermedio, ciclos, ganancia | ✅ |
 | 3 | Múltiples casas/monedas, Top 3, comisiones, disponibilidad, cotizaciones antiguas | pendiente |
 | 4 | Distancias, tiempos, transporte, confianza, riesgo | pendiente |
 | 5 | Telegram, contacto, mensajes de verificación | pendiente |
@@ -58,7 +59,9 @@ python -m app.main scrape --only afex # ejecuta uno en particular
 python -m app.main quotes             # últimas cotizaciones guardadas
 python -m app.main houses             # casas descubiertas / con cotización / sin datos
 python -m app.main probe afex         # diagnóstico del sitio (guarda en data/probe/afex/)
-python -m app.main loop --interval 180  # ciclo continuo cada 3 minutos
+python -m app.main analyze            # Top N rutas con las últimas cotizaciones
+python -m app.main analyze --capital 5000000 --steps 4 --top 5 --save
+python -m app.main loop --interval 180  # scrape + análisis + guardado cada 3 minutos
 pytest                                # tests
 ```
 
@@ -80,15 +83,16 @@ Toda la configuración vive en `.env` (ver `.env.example`). Un valor vacío usa 
 | Número máximo de pasos | `MAX_STEPS` | `5` |
 | Ganancia mínima para alertar | `MIN_NET_PROFIT_CLP` | `10000` |
 | Antigüedad máxima de cotización | `MAX_QUOTE_AGE_MINUTES` | `10` |
-| Margen de seguridad | `SAFETY_MARGIN_PERCENT` | `0.5` |
+| Margen de seguridad (% que se empeora cada tasa) | `SAFETY_MARGIN_PERCENT` | `0.5` |
+| Amplitud de búsqueda | `SEARCH_BEAM_WIDTH` | `100` |
 | Medio y costo de transporte | `TRANSPORT_MODE`, `TRANSPORT_COST_PER_KM` | `public_transport`, `0` |
 | Comisión estimada manual | `DEFAULT_COMMISSION_PERCENT`, `DEFAULT_COMMISSION_FIXED_CLP` | vacía (desconocida) |
 | Umbral de cotización anómala | `ANOMALY_THRESHOLD_PERCENT` | `15` |
 | Scrapers activos | `ENABLED_SCRAPERS` | `manual_csv` |
 | Base de datos | `DATABASE_URL` | SQLite en `data/arbitraje.db` |
 
-> Capital, Top N, pasos, transporte y comisiones los usa el motor de rutas, que llega en
-> las Fases 2-4. Las variables ya existen para que la configuración no cambie después.
+> Capital, Top N, pasos, comisiones y margen ya los usa el motor (también se pueden pasar por
+> línea de comandos: `analyze --capital --top --steps`). Transporte se aplica desde la Fase 4.
 
 Para pasar a PostgreSQL: `pip install "psycopg[binary]"` y
 `DATABASE_URL=postgresql+psycopg://usuario:clave@host:5432/arbitraje`.

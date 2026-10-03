@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     min_net_profit_clp: float = 10_000
     max_quote_age_minutes: int = Field(10, ge=1)
     safety_margin_percent: float = Field(0.5, ge=0)
+    # Estados que se conservan por (divisa, paso) durante la búsqueda. Más alto =
+    # búsqueda más exhaustiva y más lenta. Ver docs/ENGINE.md.
+    search_beam_width: int = Field(100, ge=1)
 
     # --- Calidad de datos ---
     # Desviación máxima (%) del precio medio de una divisa respecto de la mediana

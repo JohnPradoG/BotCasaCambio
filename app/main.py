@@ -7,7 +7,9 @@
     python -m app.main houses           # resumen de casas (descubiertas / con cotización / sin datos)
     python -m app.main scrapers         # scrapers disponibles y su estado de verificación
     python -m app.main probe afex       # diagnóstico de un sitio para ajustar su scraper
-    python -m app.main loop --interval 180   # scrape periódico (VPS)
+    python -m app.main analyze          # Top N rutas con las últimas cotizaciones
+    python -m app.main analyze --capital 5000000 --steps 4 --top 5
+    python -m app.main loop --interval 180   # scrape + análisis periódico (VPS)
 """
 
 from __future__ import annotations
@@ -24,7 +26,10 @@ from app.database.db import init_db, session_scope
 from app.logging_config import setup_logging
 from app.scrapers.registry import available_scrapers, get_scrapers
 from app.services.house_service import house_stats, sync_houses
+from app.services.arbitrage_engine import SearchStats, find_best_routes
+from app.services.opportunity_service import quotes_for_engine, save_routes
 from app.services.quote_service import collect_quotes, latest_quotes
+from app.services.report import format_top
 
 logger = logging.getLogger("app")
 
@@ -102,10 +107,26 @@ def cmd_probe(args) -> int:
     return 0
 
 
+def cmd_analyze(args) -> int:
+    settings = get_settings()
+    init_db()
+    capital = args.capital if args.capital is not None else settings.initial_capital_clp
+    with session_scope() as s:
+        quotes = quotes_for_engine(s, args.max_age)
+        stats = SearchStats()
+        routes = find_best_routes(quotes, initial_amount=capital, max_steps=args.steps, top_n=args.top, stats=stats)
+        if args.save:
+            save_routes(s, routes)
+    print(format_top(routes, capital))
+    print(f"\n({len(quotes)} cotizaciones, {stats.candidate_routes} rutas generadas, {stats.valid_routes} rutas válidas)")
+    return 0
+
+
 def cmd_loop(args) -> int:
     while True:
         try:
             cmd_scrape(argparse.Namespace(only=args.only))
+            cmd_analyze(argparse.Namespace(capital=None, steps=None, top=None, max_age=None, save=True))
         except Exception:  # noqa: BLE001 - el bucle no debe morir
             logger.exception("Error en el ciclo de scraping")
         time.sleep(args.interval)
@@ -126,6 +147,13 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("probe")
     p.add_argument("slug")
     p.set_defaults(func=cmd_probe)
+    p = sub.add_parser("analyze")
+    p.add_argument("--capital", type=float, default=None, help="capital inicial en CLP (por defecto INITIAL_CAPITAL_CLP)")
+    p.add_argument("--steps", type=int, default=None, help="máximo de operaciones (por defecto MAX_STEPS)")
+    p.add_argument("--top", type=int, default=None, help="rutas a mostrar (por defecto TOP_ROUTES)")
+    p.add_argument("--max-age", type=int, default=None, help="ignorar cotizaciones de más de N minutos")
+    p.add_argument("--save", action="store_true", help="guardar las rutas como oportunidades")
+    p.set_defaults(func=cmd_analyze)
     p = sub.add_parser("loop")
     p.add_argument("--interval", type=int, default=180, help="segundos entre ciclos (60-300 recomendado)")
     p.add_argument("--only", nargs="+")
