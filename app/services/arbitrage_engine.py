@@ -479,7 +479,44 @@ def find_best_routes(
     return ranked
 
 
+def reprice_route(
+    signature: str,
+    quotes: Iterable[NormalizedQuote],
+    initial_amount: float,
+    settings: Settings | None = None,
+    directory: dict | None = None,
+    distance_provider=None,
+    now: datetime | None = None,
+) -> Route | None:
+    """Recalcula una ruta ya detectada (misma secuencia de operaciones) con las cotizaciones actuales.
+
+    Devuelve None si alguna operación ya no existe (cotización retirada, sin disponibilidad
+    o fuera de los montos publicados). Sirve para avisar cuando la ganancia de una ruta
+    alertada baja; no participa del ranking.
+    """
+    from app.services.route_optimizer import enrich_routes
+
+    settings = settings or get_settings()
+    now = now or datetime.now(timezone.utc)
+    graph = build_graph(quotes, settings.default_commission_percent, settings.default_commission_fixed_clp)
+    index = {e.describe(): e for out in graph.edges.values() for e in out}
+    try:
+        edges = tuple(index[part] for part in signature.split(" | "))
+    except KeyError:
+        return None
+    amount = initial_amount
+    for edge in edges:
+        out = edge.convert(amount)
+        if out <= 0 or not edge.amount_ok(amount, out):
+            return None
+        amount = out
+    base = edges[0].from_currency
+    route = _evaluate(edges, initial_amount, base, settings.safety_margin_percent / 100, now,
+                      settings.max_quote_age_minutes)
+    return enrich_routes([route], directory or {}, settings, now=now, provider=distance_provider)[0]
+
+
 __all__ = [
     "Edge", "CurrencyGraph", "Route", "RouteStep", "SearchStats", "build_graph", "search_routes",
-    "rank_routes", "find_best_routes", "simulate", "sensitivity",
+    "rank_routes", "find_best_routes", "reprice_route", "simulate", "sensitivity",
 ]

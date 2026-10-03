@@ -224,3 +224,68 @@ def test_api_token(client, cycle_settings):
     assert client.get("/api/quotes").status_code == 401
     assert client.get("/api/quotes?token=s3").status_code == 200
     assert client.get("/api/quotes", headers={"X-Token": "s3"}).status_code == 200
+
+
+# ------------------------------------------------------------- aviso de baja
+def _set_prices(settings, rows: str):
+    from pathlib import Path
+
+    Path(settings.manual_quotes_file).write_text("exchange_house,currency,buy_rate,sell_rate\n" + rows, encoding="utf-8")
+
+
+def test_drop_alert_when_profit_falls_10_percent(engine, cycle_settings):
+    notifier = FakeNotifier()
+    with session_scope(engine) as s:
+        run_cycle(s, cycle_settings, notifier=notifier)  # +$31.579 → alerta normal
+    assert len(notifier.sent) == 1
+
+    _set_prices(cycle_settings, "a,USD,930,950\nb,USD,977,1000\n")  # +$28.421: baja 10%
+    with session_scope(engine) as s:
+        result = run_cycle(s, cycle_settings, notifier=notifier)
+        assert result.drop_alerts
+    assert notifier.sent[-1].startswith("⚠️ BAJÓ LA GANANCIA")
+    assert "Avisada: +$31.579 CLP" in notifier.sent[-1] and "Ahora: +$28.421 CLP (-10%)" in notifier.sent[-1]
+    assert "Ruta: CLP → USD → CLP" in notifier.sent[-1]
+    assert len(notifier.sent) == 2
+
+    with session_scope(engine) as s:
+        run_cycle(s, cycle_settings, notifier=notifier)  # sin cambios: no se repite
+    assert len(notifier.sent) == 2
+
+
+def test_small_drop_is_not_alerted(engine, cycle_settings):
+    notifier = FakeNotifier()
+    with session_scope(engine) as s:
+        run_cycle(s, cycle_settings, notifier=notifier)
+    _set_prices(cycle_settings, "a,USD,930,950\nb,USD,979,1000\n")  # baja ~3%
+    with session_scope(engine) as s:
+        assert not run_cycle(s, cycle_settings, notifier=notifier).drop_alerts
+    assert len(notifier.sent) == 1
+
+
+def test_drop_alert_when_route_disappears_only_once(engine, cycle_settings):
+    notifier = FakeNotifier()
+    with session_scope(engine) as s:
+        run_cycle(s, cycle_settings, notifier=notifier)
+    from pathlib import Path
+
+    # La casa b publica que ya no tiene USD: la operación sale del grafo.
+    Path(cycle_settings.manual_quotes_file).write_text(
+        "exchange_house,currency,buy_rate,sell_rate,availability\na,USD,930,950,\nb,USD,980,1000,false\n",
+        encoding="utf-8")
+    for _ in range(2):
+        with session_scope(engine) as s:
+            run_cycle(s, cycle_settings, notifier=notifier)
+    assert len(notifier.sent) == 2
+    assert "ya no está publicada" in notifier.sent[-1]
+
+
+def test_drop_alert_disabled(engine, cycle_settings):
+    notifier = FakeNotifier()
+    settings = cycle_settings.model_copy(update={"alert_drop_percent": 0})
+    with session_scope(engine) as s:
+        run_cycle(s, settings, notifier=notifier)
+    _set_prices(settings, "a,USD,930,950\nb,USD,960,1000\n")
+    with session_scope(engine) as s:
+        assert run_cycle(s, settings, notifier=notifier).drop_alerts == []
+    assert len(notifier.sent) == 1

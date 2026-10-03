@@ -156,3 +156,18 @@ def format_alert(routes: list[Route], directory: dict[str, ExchangeHouse], initi
         parts.append(format_alert_route(route, directory, detailed=(i == 0)))
         parts.append("")
     return "\n".join(parts).rstrip()
+
+
+def format_drop_alert(route_text: str, houses: str, notified_profit: float, current: Route | None,
+                      notified_at_local: str, drop_percent: float) -> str:
+    """Aviso de que una ruta ya alertada perdió ganancia (o dejó de existir)."""
+    lines = ["⚠️ BAJÓ LA GANANCIA", "", f"Ruta: {route_text}", f"Casas: {houses}",
+             f"Avisada: {clp(notified_profit, sign=True)} CLP ({notified_at_local})"]
+    if current is None:
+        lines.append("Ahora: una de las cotizaciones ya no está publicada o no aplica al monto.")
+    elif current.net_profit_clp <= 0:
+        lines.append(f"Ahora: {clp(current.net_profit_clp, sign=True)} CLP, ya no es rentable.")
+    else:
+        lines.append(f"Ahora: {clp(current.net_profit_clp, sign=True)} CLP (-{drop_percent:.0f}%)")
+    lines += ["", "Revisa antes de desplazarte."]
+    return "\n".join(lines)

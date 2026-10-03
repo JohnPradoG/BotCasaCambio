@@ -72,6 +72,9 @@ class Settings(BaseSettings):
     alert_cooldown_minutes: int = Field(60, ge=0)
     # Mejora mínima (%) de la ganancia neta para volver a alertar la misma ruta.
     alert_min_improvement_percent: float = Field(10, ge=0)
+    # Avisar si la ganancia neta de una ruta ya alertada cae este % o más (0 = no avisar).
+    # Se vigila mientras la oportunidad está vigente (OPPORTUNITY_TTL_MINUTES).
+    alert_drop_percent: float = Field(10, ge=0, lt=100)
 
     # --- Seguimiento ---
     # Oportunidades DETECTED / PENDING_VERIFICATION más antiguas pasan a EXPIRED.

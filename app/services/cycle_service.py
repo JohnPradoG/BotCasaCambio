@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 from pathlib import Path
 
 from sqlalchemy import select
@@ -13,10 +14,10 @@ from sqlalchemy.orm import Session
 from app.config.settings import Settings
 from app.database.models import OpportunityRow
 from app.models.quote import utcnow
-from app.notifications.messages import format_alert
+from app.notifications.messages import format_alert, format_drop_alert
 from app.notifications.telegram import ConsoleNotifier, TelegramNotifier
 from app.scrapers.registry import get_scrapers
-from app.services.arbitrage_engine import Route, SearchStats, find_best_routes
+from app.services.arbitrage_engine import Route, SearchStats, find_best_routes, reprice_route
 from app.services.house_service import house_directory, sync_houses
 from app.services.opportunity_service import quotes_for_engine, save_routes
 from app.services.quote_service import collect_quotes
@@ -29,6 +30,7 @@ logger = logging.getLogger(__name__)
 class CycleResult:
     routes: list[Route] = field(default_factory=list)
     alerted: list[Route] = field(default_factory=list)
+    drop_alerts: list[str] = field(default_factory=list)  # firmas de rutas cuya baja se avisó
     quotes_used: int = 0
     expired: int = 0
     stats: SearchStats = field(default_factory=SearchStats)
@@ -54,6 +56,63 @@ def should_alert(session: Session, route: Route, settings: Settings) -> bool:
     if last is None:
         return True
     return route.net_profit_clp >= last.net_profit_clp * (1 + settings.alert_min_improvement_percent / 100)
+
+
+_WATCHED_STATUSES = ("DETECTED", "PENDING_VERIFICATION", "VERIFIED")
+
+
+def check_drops(session: Session, quotes, settings: Settings, directory: dict, notifier, now=None) -> list[str]:
+    """Avisa si una ruta ya alertada perdió ``ALERT_DROP_PERCENT`` % o más de su ganancia neta.
+
+    La ruta se recalcula con las mismas operaciones y las cotizaciones actuales, aunque ya no
+    esté en el Top. Cada aviso pasa a ser la nueva referencia, así que una baja no se repite
+    en cada ciclo; una ruta que desaparece se avisa una sola vez.
+    """
+    if settings.alert_drop_percent <= 0:
+        return []
+    now = now or utcnow()
+    since = now - timedelta(minutes=settings.opportunity_ttl_minutes)
+    rows = session.scalars(
+        select(OpportunityRow)
+        .where(OpportunityRow.alerted.is_(True), OpportunityRow.alerted_at >= since,
+               OpportunityRow.status.in_(_WATCHED_STATUSES), OpportunityRow.signature.is_not(None))
+        .order_by(OpportunityRow.alerted_at.desc())
+    ).all()
+    latest: dict[str, OpportunityRow] = {}
+    for row in rows:
+        latest.setdefault(row.signature, row)
+
+    tz = ZoneInfo(settings.timezone)
+    sent: list[str] = []
+    for signature, row in latest.items():
+        details = dict(row.details or {})
+        if details.get("drop_gone_notified"):
+            continue
+        reference = details.get("last_notified_net_profit", row.net_profit_clp)
+        if reference <= 0:
+            continue
+        current = reprice_route(signature, quotes, row.initial_clp, settings, directory, now=now)
+        current_profit = current.net_profit_clp if current is not None else None
+        if current_profit is not None and current_profit > reference * (1 - settings.alert_drop_percent / 100):
+            continue
+        drop = 100.0 if current_profit is None else (reference - current_profit) / reference * 100
+        notified_at = details.get("last_notified_at") or row.alerted_at.isoformat()
+        when = datetime.fromisoformat(notified_at) if isinstance(notified_at, str) else notified_at
+        if when.tzinfo is None:
+            when = when.replace(tzinfo=timezone.utc)
+        route_text = " → ".join(details.get("currencies") or []) or signature
+        houses = " → ".join(directory[h].name if h in directory else h for h in details.get("houses") or []) or "-"
+        text = format_drop_alert(route_text, houses, reference, current, when.astimezone(tz).strftime("%H:%M"), drop)
+        if not notifier.send(text):
+            continue
+        if current_profit is None or current_profit <= 0:
+            details["drop_gone_notified"] = True
+        details["last_notified_net_profit"] = current_profit if current_profit is not None else 0.0
+        details["last_notified_at"] = now.isoformat()
+        row.details = details
+        sent.append(signature)
+        logger.info("Aviso de baja enviado: %s (%.0f%%)", signature, drop)
+    return sent
 
 
 def run_cycle(session: Session, settings: Settings, scrape: bool = True, notifier=None,
@@ -86,6 +145,8 @@ def run_cycle(session: Session, settings: Settings, scrape: bool = True, notifie
                         if row.signature in alerted_sigs:
                             row.alerted, row.alerted_at = True, now
                     result.alerted = worth
+            notifier = notifier or make_notifier(settings)
+            result.drop_alerts = check_drops(session, quotes, settings, directory, notifier)
         result.expired = expire_old(session, settings.opportunity_ttl_minutes)
     session.flush()
     return result

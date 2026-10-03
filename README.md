@@ -105,7 +105,9 @@ pytest                                    # tests
 Cada ciclo (SPEC §52) consulta las casas, guarda **todas** las cotizaciones, calcula las
 rutas, elimina las inválidas, calcula ganancia, distancia, tiempo y confianza, guarda el
 Top N como oportunidades y envía Telegram solo si una ruta es nueva o mejoró
-(`ALERT_MIN_IMPROVEMENT_PERCENT`) y supera `MIN_NET_PROFIT_CLP`. Las oportunidades no
+(`ALERT_MIN_IMPROVEMENT_PERCENT`) y supera `MIN_NET_PROFIT_CLP`. Si después la ganancia de
+una ruta ya avisada baja `ALERT_DROP_PERCENT` % o más (por defecto 10%), o la ruta deja de
+existir, llega un aviso "⚠️ BAJÓ LA GANANCIA" para no desplazarse de balde. Las oportunidades no
 revisadas pasan a `EXPIRED` después de `OPPORTUNITY_TTL_MINUTES`.
 
 ## Configuración (`.env`)
@@ -119,6 +121,7 @@ Toda la configuración vive en `.env` (ver `.env.example`, comentado). Un valor 
 | **Número máximo de pasos** | `MAX_STEPS` (o `--steps`) | `5` |
 | **Costo de transporte** | `TRANSPORT_MODE`, `TRANSPORT_COST_PER_KM`, `TRANSPORT_FIXED_COST_PER_TRIP_CLP` | `public_transport`, `0`, `0` |
 | Ganancia mínima para alertar | `MIN_NET_PROFIT_CLP` | `10000` |
+| Aviso si una ruta avisada baja su ganancia | `ALERT_DROP_PERCENT` (0 = no avisar) | `10` |
 | Margen de seguridad (% que se empeora cada tasa) | `SAFETY_MARGIN_PERCENT` | `0.5` |
 | Antigüedad que baja la confianza | `MAX_QUOTE_AGE_MINUTES` | `10` |
 | Comisión estimada manual | `DEFAULT_COMMISSION_PERCENT`, `DEFAULT_COMMISSION_FIXED_CLP` | vacía (desconocida) |
