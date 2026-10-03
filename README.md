@@ -26,7 +26,18 @@ maximicen el **CLP final neto** partiendo de un capital configurable. El bot sol
 | Scraper | Casa | Estado |
 |---------|------|--------|
 | `manual_csv` | cualquiera (precios ingresados a mano en `data/manual_quotes.csv`) | funcional |
+| `gamaex` | Gamaex (gamaex.cl, Providencia) | **sin verificar en vivo**: tabla HTML estática; columnas "Vendes"/"Compras" (punto de vista del cliente, ya traducidas). La página dice "0% comisiones". |
+| `cambios_lyon` | Cambios Lyon (cambioslyon.cl, 3 sucursales) | **sin verificar en vivo**: tabla HTML estática con hora de actualización publicada. Varias divisas solo tienen precio de compra. |
+| `inmonex` | Inmonex (inmonex.cl, Santiago Centro) | **sin verificar en vivo**: tabla HTML estática, sin hora publicada; la casa negocia la tasa del día en sucursal. |
 | `afex` | AFEX (afex.cl) | **sin verificar**: el sitio carga los precios con JavaScript y no se pudo inspeccionar desde el entorno de desarrollo. Ejecutar `python -m app.main probe afex` en el VPS para confirmarlo o ajustarlo. Desactivado por defecto. |
+
+Gamaex, Cambios Lyon e Inmonex se leyeron el 2026-10-03 a través de una conversión a
+texto de sus páginas (el entorno de desarrollo no puede descargar sitios .cl), así que
+falta probarlos contra el HTML real: `python -m app.main scrape --only gamaex` (y lo mismo
+con `cambios_lyon` e `inmonex`). Si devuelven cotizaciones, agrégalos a `ENABLED_SCRAPERS`.
+
+More Exchange (moreexchange.cl) está registrada con sus sucursales, pero carga los precios
+con JavaScript y todavía no tiene scraper; sus precios pueden ir en `data/manual_quotes.csv`.
 
 Los datos de casas en `data/exchange_houses.json` vienen de fuentes públicas, con su
 `source_url`. Lo que no se pudo confirmar queda en `null` y con `verified: false`.
@@ -183,6 +194,10 @@ class MiCasaScraper(BaseScraper):
 
 3. Agrega el slug a `ENABLED_SCRAPERS` y prueba con `python -m app.main scrape --only mi_casa`.
 4. Agrega un test con un HTML de ejemplo en `tests/fixtures/`.
+
+Si la casa publica una tabla HTML simple, basta con heredar de `HtmlTableScraper`
+(`app/scrapers/table_scraper.py`), como `gamaex.py` o `inmonex.py`: solo se declaran el
+slug, la URL y, si la página la publica, la hora de actualización.
 
 Si el sitio publica una API o JSON embebido, prefiérelo (`find_rate_records`). Si carga
 con JavaScript, usa Playwright como en `afex.py`. Nunca hay que saltarse CAPTCHAs, logins

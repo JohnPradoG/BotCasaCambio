@@ -17,7 +17,8 @@ app/
 │   ├── normalization.py        parse de números chilenos + significado de compra/venta
 │   ├── extractors.py           JSON embebido/API, tablas HTML, texto renderizado
 │   ├── registry.py             registro automático de scrapers (@register)
-│   └── exchanges/              un módulo por casa (manual_csv, afex, ...)
+│   ├── table_scraper.py        base para casas con tabla HTML estática (hora publicada, "sin comisiones")
+│   └── exchanges/              un módulo por casa (manual_csv, gamaex, cambios_lyon, inmonex, afex)
 ├── services/
 │   ├── quote_service.py        ejecuta scrapers, marca anomalías, guarda todo el historial
 │   ├── anomaly_service.py      ANOMALOUS_QUOTE (SPEC §35)

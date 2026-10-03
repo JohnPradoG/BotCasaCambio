@@ -65,6 +65,216 @@
           "notes": null
         }
       ]
+    },
+    {
+      "slug": "gamaex",
+      "name": "Gamaex",
+      "website": "https://www.gamaex.cl/",
+      "quotes_url": "https://www.gamaex.cl/",
+      "phone": "+56 2 2946 2670",
+      "whatsapp": "+56 9 3878 2514",
+      "source_url": "https://www.gamaex.cl/",
+      "scraper": "gamaex",
+      "notes": "Leído de gamaex.cl el 2026-10-03 (lectura automática, pendiente de verificación humana). Segundo teléfono publicado: +56 2 2789 4391. Email publicado: gamaex@gmail.com. La página dice '0% comisiones' y pide confirmar el valor por WhatsApp antes de acudir.",
+      "branches": [
+        {
+          "name": "Providencia",
+          "address": "Av. Pedro de Valdivia 020",
+          "comuna": "Providencia",
+          "phone": "+56 2 2946 2670",
+          "whatsapp": "+56 9 3878 2514",
+          "opening_hours": "Lun – Vie: 9:00 — 17:00; Sábado: 9:00 — 13:00; Domingo: Cerrado",
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://www.gamaex.cl/",
+          "verified": false,
+          "notes": "Metro Pedro de Valdivia, Línea 1",
+          "schedule": {
+            "mon": [
+              "09:00",
+              "17:00"
+            ],
+            "tue": [
+              "09:00",
+              "17:00"
+            ],
+            "wed": [
+              "09:00",
+              "17:00"
+            ],
+            "thu": [
+              "09:00",
+              "17:00"
+            ],
+            "fri": [
+              "09:00",
+              "17:00"
+            ],
+            "sat": [
+              "09:00",
+              "13:00"
+            ],
+            "sun": null
+          }
+        }
+      ]
+    },
+    {
+      "slug": "cambios_lyon",
+      "name": "Cambios Lyon",
+      "website": "https://cambioslyon.cl/w25/",
+      "quotes_url": "https://cambioslyon.cl/w25/",
+      "phone": "+56 2 2333 1655",
+      "whatsapp": null,
+      "source_url": "https://cambioslyon.cl/w25/",
+      "scraper": "cambios_lyon",
+      "notes": "Leído de cambioslyon.cl el 2026-10-03 (lectura automática, pendiente de verificación humana). La página publica 'Valores Referenciales' con hora de actualización y recomienda llamar para reservar divisas. Los días de atención no están completos, por eso no hay horario estructurado.",
+      "branches": [
+        {
+          "name": "Casa Matriz",
+          "address": "Paseo Las Palmas 2213, Local 23",
+          "comuna": null,
+          "phone": "+56 2 2333 1655",
+          "whatsapp": null,
+          "opening_hours": "9:30 – 18:00 *Miércoles. 10:00 – 17:00",
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://cambioslyon.cl/w25/",
+          "verified": false,
+          "notes": "Metro Los Leones"
+        },
+        {
+          "name": "Tobalaba",
+          "address": "Luis Thayer Ojeda 0127, Local 159",
+          "comuna": null,
+          "phone": "+56 2 2232 4721",
+          "whatsapp": null,
+          "opening_hours": "10:00 – 18:30",
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://cambioslyon.cl/w25/",
+          "verified": false,
+          "notes": "Estación metro Tobalaba"
+        },
+        {
+          "name": "Escuela Militar",
+          "address": "Av. Apoquindo 4400, Local 107",
+          "comuna": null,
+          "phone": "+56 2 2428 6306",
+          "whatsapp": null,
+          "opening_hours": "10:00 – 20:00 Sábados 10:00 – 14:00",
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://cambioslyon.cl/w25/",
+          "verified": false,
+          "notes": "Centro Comercial Sub Centro, estación metro Escuela Militar"
+        }
+      ]
+    },
+    {
+      "slug": "inmonex",
+      "name": "Inmonex",
+      "website": "https://inmonex.cl/",
+      "quotes_url": "https://inmonex.cl/",
+      "phone": "+56 9 3500 5923",
+      "whatsapp": null,
+      "source_url": "https://inmonex.cl/contacto/",
+      "scraper": "inmonex",
+      "notes": "Leído de inmonex.cl el 2026-10-03 (lectura automática, pendiente de verificación humana). Email publicado: inmonex.cl@gmail.com. La portada dice 'Local S' y la página de contacto 'Local 2'; se usa la de contacto. La portada dice que la tasa del día se negocia en sucursal.",
+      "branches": [
+        {
+          "name": "Santiago Centro",
+          "address": "Huérfanos 1178, Galería Hotel Gran Palace, Local 2",
+          "comuna": "Santiago",
+          "phone": "+56 9 3500 5923",
+          "whatsapp": null,
+          "opening_hours": "Lunes a Viernes de 8:30 a 19:00 – Sábados 9:00 a 17:00 – Domingo Cerrado",
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://inmonex.cl/contacto/",
+          "verified": false,
+          "notes": null,
+          "schedule": {
+            "mon": [
+              "08:30",
+              "19:00"
+            ],
+            "tue": [
+              "08:30",
+              "19:00"
+            ],
+            "wed": [
+              "08:30",
+              "19:00"
+            ],
+            "thu": [
+              "08:30",
+              "19:00"
+            ],
+            "fri": [
+              "08:30",
+              "19:00"
+            ],
+            "sat": [
+              "09:00",
+              "17:00"
+            ],
+            "sun": null
+          }
+        }
+      ]
+    },
+    {
+      "slug": "more_exchange",
+      "name": "More Exchange",
+      "website": "https://moreexchange.cl/",
+      "quotes_url": "https://moreexchange.cl/",
+      "phone": "+56 2 2233 5327",
+      "whatsapp": null,
+      "source_url": "https://moreexchange.cl/",
+      "scraper": null,
+      "notes": "Leído de moreexchange.cl el 2026-10-03 (lectura automática, pendiente de verificación humana). Publica precios, pero se cargan con JavaScript ('Loading data...'): falta revisar de dónde vienen antes de escribir el scraper. Mientras, sus precios se pueden cargar en data/manual_quotes.csv. Otro teléfono publicado: +56 9 6906 0570.",
+      "branches": [
+        {
+          "name": "Casa Central San Sebastián",
+          "address": "San Sebastián 2814",
+          "comuna": "Las Condes",
+          "phone": "+56 9 8894 6178",
+          "whatsapp": null,
+          "opening_hours": "Lun-Vie 8:50-18:00, Sáb 10:00-13:00 (según lectura automática)",
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://moreexchange.cl/",
+          "verified": false,
+          "notes": null
+        },
+        {
+          "name": "El Bosque Norte",
+          "address": "El Bosque Norte 091",
+          "comuna": "Las Condes",
+          "phone": "+56 9 8894 6019",
+          "whatsapp": null,
+          "opening_hours": "Lun-Vie 9:00-17:30, Sáb 10:00-14:00 (según lectura automática)",
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://moreexchange.cl/",
+          "verified": false,
+          "notes": null
+        },
+        {
+          "name": "Providencia",
+          "address": "Suecia 13, Local 5",
+          "comuna": "Providencia",
+          "phone": "+56 9 7299 7623",
+          "whatsapp": null,
+          "opening_hours": "Lun-Vie 9:00-17:30, Sáb 10:00-14:00 (según lectura automática)",
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://moreexchange.cl/",
+          "verified": false,
+          "notes": null
+        }
+      ]
     }
   ]
 }

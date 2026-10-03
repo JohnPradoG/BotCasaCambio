@@ -61,6 +61,10 @@ con estado `PENDING_VERIFICATION`.
   esa operación no se usa (la tasa no aplica al monto completo).
 - Cotizaciones con más de `MAX_QUOTE_AGE_MINUTES`: se usan, con bandera `STALE_QUOTE` y menos
   confianza (nunca ALTA). Más antiguas que `MAX_QUOTE_USABLE_HOURS`: no se usan.
+- La antigüedad se mide desde el dato más antiguo entre la hora publicada por la casa
+  (`timestamp_source`, p. ej. "Última actualización 02 de Octubre, 10:00") y la hora de
+  captura: un precio publicado ayer y leído hace un minuto sigue siendo de ayer. Esto solo
+  baja la confianza; el filtro de `MAX_QUOTE_USABLE_HOURS` usa la hora de captura.
 
 ## Recorrido físico (Fase 4, `route_optimizer.py`)
 

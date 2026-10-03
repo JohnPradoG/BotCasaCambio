@@ -285,6 +285,17 @@ class SearchStats:
     valid_routes: int = 0
 
 
+def _quote_age_minutes(q: NormalizedQuote, now: datetime) -> float:
+    """Minutos desde el dato más antiguo entre la hora publicada por la casa y la de captura.
+
+    Un precio publicado ayer y leído hace un minuto sigue siendo un precio de ayer.
+    Solo afecta la bandera STALE_QUOTE y la confianza, nunca el ranking.
+    """
+    stamps = [t if t.tzinfo else t.replace(tzinfo=timezone.utc)
+              for t in (q.timestamp_collected, q.timestamp_source) if t is not None]
+    return max(0.0, (now - min(stamps)).total_seconds() / 60)
+
+
 def _evaluate(
     edges: tuple[Edge, ...], initial: float, base: str, margin: float,
     now: datetime | None = None, max_quote_age_minutes: float | None = None,
@@ -307,10 +318,7 @@ def _evaluate(
             flags.add("COMMISSION_UNKNOWN")
         if e.commission_estimated:
             flags.add("COMMISSION_ESTIMATED")
-        collected = q.timestamp_collected
-        if collected.tzinfo is None:
-            collected = collected.replace(tzinfo=timezone.utc)
-        age = max(0.0, (now - collected).total_seconds() / 60)
+        age = _quote_age_minutes(q, now)
         if max_quote_age_minutes is not None and age > max_quote_age_minutes:
             flags.add("STALE_QUOTE")
         if q.availability is None:

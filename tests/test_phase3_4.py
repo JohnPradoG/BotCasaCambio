@@ -73,6 +73,15 @@ def test_6_stale_quote_reduces_confidence():
     assert stale.net_profit_clp == pytest.approx(fresh.net_profit_clp)  # no altera la ganancia
 
 
+def test_6b_published_time_counts_for_quote_age():
+    # Leída hace 1 minuto, pero la casa dice que la actualizó hace 3 horas.
+    old = run([q("a", "USD", 930, 950, timestamp_source=NOW - timedelta(hours=3)), q("b", "USD", 980, 1000)])[0]
+    assert "STALE_QUOTE" in old.flags
+    assert max(s.quote_age_minutes for s in old.route) == pytest.approx(180)
+    fresh = run([q("a", "USD", 930, 950), q("b", "USD", 980, 1000)])[0]
+    assert old.net_profit_clp == pytest.approx(fresh.net_profit_clp) and old.rank == 1
+
+
 def test_7_closed_house_is_not_executable_now():
     closed = {d: None for d in ("mon", "tue", "wed", "thu", "fri", "sat", "sun")}
     directory = {"a": house("a", -33.44, -70.65), "b": house("b", -33.45, -70.66, schedule=closed)}
