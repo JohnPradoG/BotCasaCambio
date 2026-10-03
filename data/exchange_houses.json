@@ -656,13 +656,13 @@
     {
       "slug": "cambios_suiza",
       "name": "Inversiones Suiza (Casa de Cambios Suiza)",
-      "website": null,
+      "website": "http://www.cambiossuiza.com/",
       "quotes_url": null,
       "phone": "+56 2 2699 0811",
       "whatsapp": null,
       "source_url": "https://wise.com/cl/currency-exchange/santiago",
       "scraper": null,
-      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana). santiagoturismo lists 'Casa de Cambios Suiza, Agustinas 1032'. No website found.",
+      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana). santiagoturismo lists 'Casa de Cambios Suiza, Agustinas 1032'. No website found. Web encontrada en buscador; no se pudo leer desde el entorno de desarrollo.",
       "branches": [
         {
           "name": "Principal",
@@ -766,7 +766,7 @@
       "whatsapp": null,
       "source_url": "https://www.global66.com/cl/casa-de-cambio/santiago/",
       "scraper": null,
-      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana). Address differs between sources.",
+      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana). Address differs between sources. Su web (cambioslaser.cl) no publica precios y parece abandonada (llena de enlaces de spam): no se usa.",
       "branches": [
         {
           "name": "Principal",
@@ -812,20 +812,20 @@
     {
       "slug": "orion",
       "name": "Orion Financial Group",
-      "website": null,
-      "quotes_url": null,
+      "website": "https://cambiosorion.cl/",
+      "quotes_url": "https://cambiosorion.cl/divisas",
       "phone": null,
-      "whatsapp": null,
-      "source_url": "https://portalcambio.cl/regiones/region-metropolitana-de-santiago/santiago/page/2/",
-      "scraper": null,
-      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana). Listed as casa de cambio by portalcambio.",
+      "whatsapp": "+56 9 7184 6048",
+      "source_url": "https://cambiosorion.cl/",
+      "scraper": "orion",
+      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana). Listed as casa de cambio by portalcambio. Web: cambiosorion.cl (pie de página: Agustinas 1035 Of 13). Publica Compra/Venta en /divisas, cargado con JavaScript. Instagram: instagram.com/CambiosOrion.cl.",
       "branches": [
         {
           "name": "Principal",
           "address": "Agustinas 1035, Of. 13",
           "comuna": "Santiago",
           "phone": null,
-          "whatsapp": null,
+          "whatsapp": "+56 9 7184 6048",
           "opening_hours": null,
           "latitude": null,
           "longitude": null,
@@ -974,7 +974,7 @@
       "whatsapp": null,
       "source_url": "https://www.global66.com/cl/casa-de-cambio/providencia/",
       "scraper": null,
-      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana). agrex.cl DNS fails.",
+      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana). agrex.cl DNS fails. 2GIS la lista como 'Argex S.A.', Pedro de Valdivia 040.",
       "branches": [
         {
           "name": "Principal",
@@ -1026,7 +1026,7 @@
       "whatsapp": null,
       "source_url": "https://portalcambio.cl/regiones/region-metropolitana-de-santiago/providencia-region-metropolitana-de-santiago/",
       "scraper": null,
-      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana).",
+      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana). Facebook: facebook.com/epandaspa.",
       "branches": [
         {
           "name": "Principal",
@@ -1072,13 +1072,13 @@
     {
       "slug": "cambios_liberty",
       "name": "Cambios Liberty",
-      "website": null,
+      "website": "http://www.cambiosliberty.cl/",
       "quotes_url": null,
       "phone": "(+56 2) 23357113",
       "whatsapp": null,
       "source_url": "https://www.cotizacion.co/casas-de-cambio-santiago/",
       "scraper": null,
-      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana). Only on cotizacion.co (possibly outdated).",
+      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana). Only on cotizacion.co (possibly outdated). Web listada en 2GIS; certificado inválido al leerla desde el entorno de desarrollo.",
       "branches": [
         {
           "name": "Principal",
@@ -1150,13 +1150,13 @@
     {
       "slug": "cambios_inter",
       "name": "Cambios Inter",
-      "website": null,
+      "website": "https://inter.cl/",
       "quotes_url": null,
       "phone": null,
       "whatsapp": null,
       "source_url": "https://www.global66.com/cl/casa-de-cambio/santiago/",
       "scraper": null,
-      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana). DF 2018 mentions 'Inter de Alto Las Condes'. cambiosinter.cl DNS fails; mercantil lists 'Cambios Inter SA' (Providencia) but mercantil unreachable.",
+      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana). DF 2018 mentions 'Inter de Alto Las Condes'. cambiosinter.cl DNS fails; mercantil lists 'Cambios Inter SA' (Providencia) but mercantil unreachable. Sucursal publicada: Parque Arauco, Kennedy 5413 Local 119. Su web no mostraba precios al 2026-10-03 (tiene app). Instagram: inter.chilecl.",
       "branches": [
         {
           "name": "Principal",
@@ -1208,7 +1208,7 @@
       "whatsapp": null,
       "source_url": "https://www.global66.com/cl/casa-de-cambio/las-condes/",
       "scraper": null,
-      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana).",
+      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana). Facebook: facebook.com/cambioselgolf.",
       "branches": [
         {
           "name": "Principal",
@@ -1234,7 +1234,7 @@
       "whatsapp": null,
       "source_url": "https://www.global66.com/cl/casa-de-cambio/las-condes/",
       "scraper": null,
-      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana).",
+      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana). Instagram: instagram.com/cambiosventura.cl.",
       "branches": [
         {
           "name": "Principal",
@@ -1280,13 +1280,13 @@
     {
       "slug": "cambios_cuyehue",
       "name": "Cambios Cuyehue",
-      "website": null,
+      "website": "https://cambioscuyehue.cl/",
       "quotes_url": null,
       "phone": null,
       "whatsapp": null,
       "source_url": "https://www.global66.com/cl/casa-de-cambio/las-condes/",
       "scraper": null,
-      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana).",
+      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana). Su web no mostraba precios al 2026-10-03.",
       "branches": [
         {
           "name": "Principal",
@@ -1410,13 +1410,13 @@
     {
       "slug": "global_exchange_scl",
       "name": "Global Exchange (Aeropuerto)",
-      "website": null,
+      "website": "https://www.global-exchange.cl/",
       "quotes_url": null,
       "phone": null,
       "whatsapp": null,
       "source_url": "https://www.global-exchange.com.au/currency-exchange-offices/chile/pudahuel-santiago-de-chile/",
       "scraper": null,
-      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana). Tasas de aeropuerto reportadas mucho peores que en la ciudad.",
+      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana). Tasas de aeropuerto reportadas mucho peores que en la ciudad. Web no legible desde el entorno de desarrollo (robots.txt sin respuesta).",
       "branches": [
         {
           "name": "Aeropuerto T2",

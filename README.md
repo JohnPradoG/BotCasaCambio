@@ -33,6 +33,7 @@ maximicen el **CLP final neto** partiendo de un capital configurable. El bot sol
 | `inmonex` | Inmonex (inmonex.cl, Santiago Centro) | **sin verificar en vivo**: tabla HTML estática, sin hora publicada; la casa negocia la tasa del día en sucursal. |
 | `more_exchange` | More Exchange (precios de la Casa Central San Sebastián) | **sin verificar**: tabla cargada con JavaScript; se lee con navegador (Playwright). |
 | `cambios_santiago` | Cambios Santiago (cstgo.cl, Providencia) | **sin verificar**: tabla "Compramos/Vendemos" cargada con JavaScript; se lee con navegador. |
+| `orion` | Cambios Orion (Agustinas 1035) | **sin verificar**: tabla Divisa/Compra/Venta en /divisas cargada con JavaScript; se lee con navegador. |
 | `web_discovery` | todas las casas registradas con web y sin scraper propio | automático: busca una tabla de precios en la portada, en enlaces de "precios"/"cotizaciones" y, si hay Playwright, con navegador. Sus precios quedan con bandera `AUTO_DISCOVERED` (ruta "por verificar" y menos confianza). Activo por defecto. |
 | `afex` | AFEX (afex.cl) | **sin verificar**: el sitio carga los precios con JavaScript y no se pudo inspeccionar desde el entorno de desarrollo. Ejecutar `python -m app.main probe afex` en el VPS para confirmarlo o ajustarlo. Desactivado por defecto. |
 
