@@ -1,0 +1,15 @@
+# Panel web. Por defecto escucha solo en 127.0.0.1 (usar túnel SSH o un proxy con DASHBOARD_TOKEN).
+[Unit]
+Description=BotCasaCambio - panel web
+After=network-online.target
+
+[Service]
+Type=simple
+User=bot
+WorkingDirectory=/opt/BotCasaCambio
+ExecStart=/opt/BotCasaCambio/.venv/bin/python -m app.main dashboard
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

@@ -65,6 +65,7 @@ class BranchRow(Base):
     phone: Mapped[str | None] = mapped_column(String(64))
     whatsapp: Mapped[str | None] = mapped_column(String(64))
     opening_hours: Mapped[str | None] = mapped_column(Text)
+    schedule: Mapped[dict | None] = mapped_column(JSON)
     latitude: Mapped[float | None] = mapped_column(Float)
     longitude: Mapped[float | None] = mapped_column(Float)
     source_url: Mapped[str | None] = mapped_column(String(500))
@@ -178,8 +179,13 @@ class OpportunityRow(Base):
     status: Mapped[str] = mapped_column(String(32), default="DETECTED", index=True)
     executable_now: Mapped[bool | None] = mapped_column(Boolean)
     quote_ids: Mapped[list[int]] = mapped_column(JSON, default=list)  # tasas exactas usadas
+    signature: Mapped[str | None] = mapped_column(String(500), index=True)
+    flags: Mapped[list[str]] = mapped_column(JSON, default=list)
+    last_status_change_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    status_reason: Mapped[str | None] = mapped_column(Text)
     details: Mapped[dict] = mapped_column(JSON, default=dict)
     alerted: Mapped[bool] = mapped_column(Boolean, default=False)
+    alerted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class VerificationRow(Base):

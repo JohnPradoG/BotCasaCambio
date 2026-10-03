@@ -1,8 +1,8 @@
-# BotCasaCambio — Arbitraje entre casas de cambio de Santiago
+# BotCasaCambio: arbitraje entre casas de cambio de Santiago
 
 Detecta rutas de cambio entre casas de cambio físicas de Santiago de Chile que
 maximicen el **CLP final neto** partiendo de un capital configurable. El bot solo
-**detecta, calcula, alerta y registra**: nunca compra, vende ni transfiere.
+**detecta, calcula, alerta y registra**. Nunca compra, vende, transfiere ni reserva.
 
 - Especificación completa: [`docs/SPEC.md`](docs/SPEC.md)
 - Arquitectura y decisiones: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
@@ -14,109 +14,150 @@ maximicen el **CLP final neto** partiendo de un capital configurable. El bot sol
 |------|-----------|--------|
 | 1 | Arquitectura, configuración, BD, modelos, cotizaciones, scraper base, primer scraper, normalización | ✅ |
 | 2 | Grafo, conversiones, rutas 1-5 pasos, CLP intermedio, ciclos, ganancia | ✅ |
-| 3 | Múltiples casas/monedas, Top 3, comisiones, disponibilidad, cotizaciones antiguas | pendiente |
-| 4 | Distancias, tiempos, transporte, confianza, riesgo | pendiente |
-| 5 | Telegram, contacto, mensajes de verificación | pendiente |
-| 6 | Historial, verificación, ejecutadas/fallidas, estadísticas | pendiente |
-| 7 | Dashboard FastAPI, mapas | pendiente |
-| 8 | Machine Learning | pendiente |
+| 3 | Múltiples casas/monedas, Top N, comisiones, disponibilidad, montos, cotizaciones antiguas, horarios | ✅ |
+| 4 | Distancias, tiempos, transporte, confianza, riesgo | ✅ |
+| 5 | Telegram, contactos, mensajes de verificación (teléfono/WhatsApp) | ✅ |
+| 6 | Historial, verificación, ejecutadas/fallidas, estadísticas | ✅ |
+| 7 | Dashboard FastAPI con mapa | ✅ |
+| 8 | Machine Learning | pendiente: requiere historial real acumulado |
 
 ### Fuentes de datos
 
 | Scraper | Casa | Estado |
 |---------|------|--------|
 | `manual_csv` | cualquiera (precios ingresados a mano en `data/manual_quotes.csv`) | funcional |
-| `afex` | AFEX (afex.cl) | **sin verificar**: el sitio carga los precios con JavaScript y no se pudo inspeccionar desde el entorno de desarrollo. Ejecutar `python -m app.main probe afex` en el VPS para confirmar/ajustar. Desactivado por defecto. |
+| `afex` | AFEX (afex.cl) | **sin verificar**: el sitio carga los precios con JavaScript y no se pudo inspeccionar desde el entorno de desarrollo. Ejecutar `python -m app.main probe afex` en el VPS para confirmarlo o ajustarlo. Desactivado por defecto. |
 
-Los datos de casas en `data/exchange_houses.json` vienen de fuentes públicas con su
-`source_url`; lo que no se pudo confirmar queda en `null` y `verified: false`.
+Los datos de casas en `data/exchange_houses.json` vienen de fuentes públicas, con su
+`source_url`. Lo que no se pudo confirmar queda en `null` y con `verified: false`.
 
-## Instalación en Linux (Ubuntu/Debian)
+## Instalación en Linux (Ubuntu/Debian, VPS económico)
 
 ```bash
 sudo apt update && sudo apt install -y python3 python3-venv git
-git clone https://github.com/JohnPradoG/BotCasaCambio.git
-cd BotCasaCambio
-python3 -m venv .venv
-source .venv/bin/activate
+sudo useradd -m -s /bin/bash bot          # opcional: usuario dedicado
+sudo mkdir -p /opt/BotCasaCambio && sudo chown bot: /opt/BotCasaCambio
+sudo -iu bot
+git clone https://github.com/JohnPradoG/BotCasaCambio.git /opt/BotCasaCambio
+cd /opt/BotCasaCambio
+python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env            # y editar valores
+cp .env.example .env                        # editar valores
+python -m app.main init-db
 
-# Solo si se usan scrapers de sitios con JavaScript (AFEX):
+# Solo para scrapers de sitios con JavaScript (AFEX):
 pip install -r requirements-browser.txt
 python -m playwright install --with-deps chromium
+
+# Opcional: coordenadas de sucursales para distancias (OpenStreetMap)
+python scripts/geocode_branches.py          # revisa
+python scripts/geocode_branches.py --write  # guarda
+```
+
+### Dejarlo corriendo
+
+Con systemd (recomendado):
+
+```bash
+sudo cp deploy/botcasacambio.service deploy/botcasacambio-dashboard.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now botcasacambio botcasacambio-dashboard
+journalctl -u botcasacambio -f              # ver logs
 ```
 
 Con Docker: `cp .env.example .env && docker compose up -d --build`.
 
-## Ejecución
+El panel escucha en `127.0.0.1:8000`. Para verlo desde tu computador usa un túnel:
+`ssh -L 8000:localhost:8000 usuario@vps` y abre http://localhost:8000. Si lo expones a
+Internet, define `DASHBOARD_TOKEN` y entra con `http://host:8000/?token=...`.
+
+## Uso
 
 ```bash
-python -m app.main init-db            # crea la BD y registra casas de data/exchange_houses.json
-python -m app.main scrapers           # lista scrapers, si están activos y verificados
-python -m app.main scrape             # ejecuta los scrapers de ENABLED_SCRAPERS
-python -m app.main scrape --only afex # ejecuta uno en particular
-python -m app.main quotes             # últimas cotizaciones guardadas
-python -m app.main houses             # casas descubiertas / con cotización / sin datos
-python -m app.main probe afex         # diagnóstico del sitio (guarda en data/probe/afex/)
-python -m app.main analyze            # Top N rutas con las últimas cotizaciones
-python -m app.main analyze --capital 5000000 --steps 4 --top 5 --save
-python -m app.main loop --interval 180  # scrape + análisis + guardado cada 3 minutos
-pytest                                # tests
+python -m app.main scrape                 # obtiene cotizaciones
+python -m app.main quotes                 # últimas cotizaciones
+python -m app.main houses                 # casas registradas / con cotización / sin datos
+python -m app.main analyze                # Top N con lo guardado (no alerta)
+python -m app.main analyze --capital 5000000 --steps 4 --top 5
+python -m app.main run-once               # un ciclo completo: scrape, rutas, guardado y alerta
+python -m app.main loop                   # ciclo cada LOOP_INTERVAL_SECONDS
+python -m app.main opportunities          # historial de oportunidades
+python -m app.main show 125               # detalle + mensajes para verificar por WhatsApp
+python -m app.main verify 125             # menú: Verified / Failed / Executed / Expired...
+python -m app.main verify 125 --status FAILED --reason "Casa no tenía suficiente USD"
+python -m app.main stats                  # estadísticas del historial
+python -m app.main telegram-test          # prueba de Telegram
+python -m app.main dashboard              # panel web
+pytest                                    # tests
 ```
 
-En un VPS se puede dejar `loop` corriendo con Docker (`restart: unless-stopped`) o con
-systemd. Alternativa con cron (cada 3 min):
-
-```cron
-*/3 * * * * cd /ruta/BotCasaCambio && .venv/bin/python -m app.main scrape >> logs/cron.log 2>&1
-```
+Cada ciclo (SPEC §52) consulta las casas, guarda **todas** las cotizaciones, calcula las
+rutas, elimina las inválidas, calcula ganancia, distancia, tiempo y confianza, guarda el
+Top N como oportunidades y envía Telegram solo si una ruta es nueva o mejoró
+(`ALERT_MIN_IMPROVEMENT_PERCENT`) y supera `MIN_NET_PROFIT_CLP`. Las oportunidades no
+revisadas pasan a `EXPIRED` después de `OPPORTUNITY_TTL_MINUTES`.
 
 ## Configuración (`.env`)
 
-Toda la configuración vive en `.env` (ver `.env.example`). Un valor vacío usa el valor por defecto.
+Toda la configuración vive en `.env` (ver `.env.example`, comentado). Un valor vacío usa el valor por defecto.
 
 | Qué cambiar | Variable | Por defecto |
 |-------------|----------|-------------|
-| Capital inicial | `INITIAL_CAPITAL_CLP` | `1000000` |
-| Número de oportunidades mostradas | `TOP_ROUTES` | `3` |
-| Número máximo de pasos | `MAX_STEPS` | `5` |
+| **Capital inicial** | `INITIAL_CAPITAL_CLP` (o `analyze --capital`) | `1000000` |
+| **Número de oportunidades mostradas** | `TOP_ROUTES` (o `--top`) | `3` |
+| **Número máximo de pasos** | `MAX_STEPS` (o `--steps`) | `5` |
+| **Costo de transporte** | `TRANSPORT_MODE`, `TRANSPORT_COST_PER_KM`, `TRANSPORT_FIXED_COST_PER_TRIP_CLP` | `public_transport`, `0`, `0` |
 | Ganancia mínima para alertar | `MIN_NET_PROFIT_CLP` | `10000` |
-| Antigüedad máxima de cotización | `MAX_QUOTE_AGE_MINUTES` | `10` |
 | Margen de seguridad (% que se empeora cada tasa) | `SAFETY_MARGIN_PERCENT` | `0.5` |
-| Amplitud de búsqueda | `SEARCH_BEAM_WIDTH` | `100` |
-| Medio y costo de transporte | `TRANSPORT_MODE`, `TRANSPORT_COST_PER_KM` | `public_transport`, `0` |
+| Antigüedad que baja la confianza | `MAX_QUOTE_AGE_MINUTES` | `10` |
 | Comisión estimada manual | `DEFAULT_COMMISSION_PERCENT`, `DEFAULT_COMMISSION_FIXED_CLP` | vacía (desconocida) |
-| Umbral de cotización anómala | `ANOMALY_THRESHOLD_PERCENT` | `15` |
+| Distancias por calle | `OSRM_URL` | vacío (línea recta × 1,3) |
+| Punto de partida | `ORIGIN_LAT`, `ORIGIN_LON` | vacío (parte en la 1.ª casa) |
+| Frecuencia del ciclo | `LOOP_INTERVAL_SECONDS` | `180` |
 | Scrapers activos | `ENABLED_SCRAPERS` | `manual_csv` |
 | Base de datos | `DATABASE_URL` | SQLite en `data/arbitraje.db` |
 
-> Capital, Top N, pasos, comisiones y margen ya los usa el motor (también se pueden pasar por
-> línea de comandos: `analyze --capital --top --steps`). Transporte se aplica desde la Fase 4.
+Ejemplo de transporte en taxi: `TRANSPORT_MODE=taxi`, `TRANSPORT_COST_PER_KM=1300`,
+`TRANSPORT_FIXED_COST_PER_TRIP_CLP=500`. Estos valores son ejemplos: pon los tuyos.
 
 Para pasar a PostgreSQL: `pip install "psycopg[binary]"` y
 `DATABASE_URL=postgresql+psycopg://usuario:clave@host:5432/arbitraje`.
 
-### Telegram (Fase 5)
+### Telegram
 
-1. En Telegram, hablar con **@BotFather** → `/newbot` → copiar el token a `TELEGRAM_BOT_TOKEN`.
-2. Enviar cualquier mensaje al bot nuevo.
-3. Abrir `https://api.telegram.org/bot<TOKEN>/getUpdates` y copiar `message.chat.id` a `TELEGRAM_CHAT_ID`.
+1. En Telegram, habla con **@BotFather**, envía `/newbot` y copia el token en `TELEGRAM_BOT_TOKEN`.
+2. Envía cualquier mensaje a tu bot nuevo.
+3. Abre `https://api.telegram.org/bot<TOKEN>/getUpdates` y copia `message.chat.id` en `TELEGRAM_CHAT_ID`.
+4. Ejecuta `python -m app.main telegram-test`.
 
-## Convención compra/venta (crítico)
+Sin Telegram configurado, las alertas quedan en `logs/bot.log`.
 
-`buy_rate` = precio en CLP al que **la casa compra** 1 unidad al cliente (se usa para X → CLP).
-`sell_rate` = precio en CLP al que **la casa vende** 1 unidad al cliente (se usa para CLP → X).
-Las etiquetas escritas desde el punto de vista del cliente ("Usted compra") se invierten en
-`app/scrapers/normalization.py`. Una etiqueta ambigua se descarta.
+## Cómo se decide el ranking
+
+- Ranking **solo por ganancia neta** = CLP final − capital − comisiones − margen de seguridad − transporte.
+- CLP es un nodo más: `CLP → USD → CLP → EUR → CLP` es válido si deja más CLP.
+- Distancia, tiempo, antigüedad, horario y disponibilidad no ocultan rutas: se reflejan en
+  la **confianza** (0-100, ALTA/MEDIA/BAJA), que nunca cambia el orden.
+- Cotizaciones sospechosas (`ANOMALOUS_QUOTE`, `INVERTED_SPREAD`) se mantienen, pero la ruta
+  queda en `PENDING_VERIFICATION` con confianza BAJA.
+- Casa cerrada: la ruta se guarda como oportunidad futura (`executable_now = false`).
+
+Convención compra/venta: `buy_rate` = la casa **compra** la divisa (se usa para X → CLP);
+`sell_rate` = la casa **vende** la divisa (se usa para CLP → X).
 
 ## Cómo agregar una casa de cambio
 
 1. **Registrar la casa** en `data/exchange_houses.json` (solo datos públicos, con
-   `source_url`; lo desconocido en `null`). Cada sucursal física va en `branches`.
-2. **Cotizaciones**, una de dos:
-   - *Manual*: agregar filas a `data/manual_quotes.csv` con el mismo `exchange_house` (slug).
-   - *Scraper*: crear `app/scrapers/exchanges/<slug>.py`:
+   `source_url`; lo desconocido en `null`). Cada sucursal física va en `branches`, con
+   coordenadas si las tienes (o `scripts/geocode_branches.py`) y, si el horario está
+   publicado completo, `schedule`:
+   ```json
+   "schedule": {"mon": ["09:00", "18:00"], "tue": ["09:00", "18:00"], "sat": ["10:00", "14:00"], "sun": null}
+   ```
+   Un día ausente significa desconocido, y `null` significa cerrado.
+2. **Cotizaciones**: elige una de estas dos opciones.
+   - *Manual*: agrega filas a `data/manual_quotes.csv` con el mismo `exchange_house` (slug).
+   - *Scraper*: crea `app/scrapers/exchanges/<slug>.py`:
 
 ```python
 from app.models.quote import NormalizedQuote
@@ -140,17 +181,16 @@ class MiCasaScraper(BaseScraper):
         ]
 ```
 
-3. Agregar el slug a `ENABLED_SCRAPERS` y probar con `python -m app.main scrape --only mi_casa`.
-4. Agregar un test con un HTML de ejemplo en `tests/fixtures/`.
+3. Agrega el slug a `ENABLED_SCRAPERS` y prueba con `python -m app.main scrape --only mi_casa`.
+4. Agrega un test con un HTML de ejemplo en `tests/fixtures/`.
 
-Si el sitio publica una API o JSON embebido, preferirlo (`find_rate_records`). Si carga
-con JavaScript, usar Playwright como en `afex.py`. Nunca saltarse CAPTCHAs, logins ni
-bloqueos: un HTTP 401/403/429 detiene el scraper sin reintentar.
+Si el sitio publica una API o JSON embebido, prefiérelo (`find_rate_records`). Si carga
+con JavaScript, usa Playwright como en `afex.py`. Nunca hay que saltarse CAPTCHAs, logins
+ni bloqueos: un HTTP 401/403/429 detiene el scraper sin reintentar.
 
 ## Principios
 
 - Nunca inventar datos: lo desconocido es `NULL`.
 - Un scraper roto no detiene a los demás (queda registrado en `scraper_runs`).
-- Se guarda **todo** el historial de cotizaciones.
-- El ranking será siempre por ganancia neta en CLP; distancia, tiempo y antigüedad solo
-  afectan la confianza.
+- Se guarda **todo** el historial de cotizaciones, oportunidades y verificaciones.
+- Nada está garantizado: confirmar precios y disponibilidad antes de desplazarse.

@@ -1,0 +1,16 @@
+# Ciclo del bot cada LOOP_INTERVAL_SECONDS. Copiar a /etc/systemd/system/ y ajustar User y rutas.
+[Unit]
+Description=BotCasaCambio - deteccion de arbitraje
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=bot
+WorkingDirectory=/opt/BotCasaCambio
+ExecStart=/opt/BotCasaCambio/.venv/bin/python -m app.main loop
+Restart=always
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target

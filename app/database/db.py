@@ -10,6 +10,7 @@ from typing import Iterator
 from sqlalchemy import create_engine, event
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.pool import StaticPool
 
 from app.config.settings import get_settings
 from app.database.models import Base
@@ -21,6 +22,8 @@ def make_engine(url: str) -> Engine:
         db_path = url.split("///", 1)[-1]
         if db_path and db_path != ":memory:":
             Path(db_path).parent.mkdir(parents=True, exist_ok=True)
+        else:
+            kwargs["poolclass"] = StaticPool  # una sola conexión: si no, cada sesión vería otra BD vacía
         kwargs["connect_args"] = {"check_same_thread": False}
     engine = create_engine(url, future=True, **kwargs)
     if url.startswith("sqlite"):

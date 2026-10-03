@@ -1,0 +1,61 @@
+"""Envío de alertas por Telegram (Bot API, solo ``sendMessage``)."""
+
+from __future__ import annotations
+
+import logging
+
+import requests
+
+logger = logging.getLogger(__name__)
+
+MAX_LEN = 4000  # el límite de Telegram es 4096 caracteres
+
+
+def split_message(text: str, limit: int = MAX_LEN) -> list[str]:
+    chunks, current = [], ""
+    for line in text.split("\n"):
+        while len(line) > limit:
+            chunks.append(line[:limit])
+            line = line[limit:]
+        if len(current) + len(line) + 1 > limit:
+            chunks.append(current.rstrip("\n"))
+            current = ""
+        current += line + "\n"
+    if current.strip():
+        chunks.append(current.rstrip("\n"))
+    return chunks
+
+
+class TelegramNotifier:
+    def __init__(self, token: str, chat_id: str, session: requests.Session | None = None, timeout: float = 15):
+        self.token = token
+        self.chat_id = chat_id
+        self.session = session or requests.Session()
+        self.timeout = timeout
+
+    def send(self, text: str) -> bool:
+        url = f"https://api.telegram.org/bot{self.token}/sendMessage"
+        ok = True
+        for chunk in split_message(text):
+            try:
+                resp = self.session.post(
+                    url, json={"chat_id": self.chat_id, "text": chunk, "disable_web_page_preview": True},
+                    timeout=self.timeout,
+                )
+                if resp.status_code != 200:
+                    logger.error("Telegram respondió %s: %s", resp.status_code, resp.text[:300])
+                    ok = False
+            except requests.RequestException as exc:
+                logger.error("No se pudo enviar a Telegram: %s", exc)
+                ok = False
+        if ok:
+            logger.info("Telegram enviado")
+        return ok
+
+
+class ConsoleNotifier:
+    """Se usa cuando Telegram no está configurado: escribe la alerta en el log."""
+
+    def send(self, text: str) -> bool:
+        logger.info("ALERTA (Telegram no configurado):\n%s", text)
+        return True

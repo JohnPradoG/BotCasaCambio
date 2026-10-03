@@ -4,55 +4,61 @@ Basada en la estructura propuesta en SPEC §40, con algunos ajustes explicados a
 
 ```text
 app/
-├── main.py                    CLI: init-db, scrape, quotes, houses, scrapers, probe, loop
-├── logging_config.py          logs a consola y logs/bot.log (rotativo)
-├── config/settings.py         toda la configuración desde .env (pydantic-settings)
-├── models/                    modelos de dominio (sin dependencia de la BD)
-│   ├── currency.py            normalización de códigos ISO / nombres en español
-│   ├── quote.py               NormalizedQuote: el único formato que devuelve un scraper
-│   ├── exchange_house.py      casa + sucursales físicas
-│   └── opportunity.py         estados de oportunidad y niveles de confianza
+├── main.py                     CLI (ver README)
+├── logging_config.py           logs a consola y logs/bot.log (rotativo)
+├── config/settings.py          toda la configuración desde .env (pydantic-settings)
+├── models/                     modelos de dominio (sin dependencia de la BD)
+│   ├── currency.py             normalización de códigos ISO / nombres en español
+│   ├── quote.py                NormalizedQuote: el único formato que devuelve un scraper
+│   ├── exchange_house.py       casa + sucursales físicas (dirección, horario, coordenadas)
+│   └── opportunity.py          estados de oportunidad y niveles de confianza
 ├── scrapers/
-│   ├── base.py                timeout, reintentos, robots.txt, validación, aislamiento de errores
-│   ├── normalization.py       parse de números chilenos + significado de compra/venta
-│   ├── extractors.py          JSON embebido/API, tablas HTML, texto renderizado
-│   ├── registry.py            registro automático de scrapers (@register)
-│   └── exchanges/
-│       ├── manual_csv.py      cotizaciones ingresadas a mano (teléfono, pizarra)
-│       └── afex.py            primer scraper de un sitio real
+│   ├── base.py                 timeout, reintentos, robots.txt, validación, aislamiento de errores
+│   ├── normalization.py        parse de números chilenos + significado de compra/venta
+│   ├── extractors.py           JSON embebido/API, tablas HTML, texto renderizado
+│   ├── registry.py             registro automático de scrapers (@register)
+│   └── exchanges/              un módulo por casa (manual_csv, afex, ...)
 ├── services/
-│   ├── quote_service.py       ejecuta scrapers, marca anomalías, guarda todo el historial
-│   ├── anomaly_service.py     ANOMALOUS_QUOTE (SPEC §35)
-│   ├── house_service.py       registro manual de casas y estadísticas (SPEC §44)
-│   ├── arbitrage_engine.py    grafo, búsqueda de rutas, ganancia neta, Top N (ver ENGINE.md)
-│   ├── opportunity_service.py cotizaciones de la BD → motor → oportunidades guardadas
-│   └── report.py              texto del Top N (formato SPEC §46)
+│   ├── quote_service.py        ejecuta scrapers, marca anomalías, guarda todo el historial
+│   ├── anomaly_service.py      ANOMALOUS_QUOTE (SPEC §35)
+│   ├── house_service.py        registro manual de casas, directorio y estadísticas (SPEC §44)
+│   ├── arbitrage_engine.py     grafo, búsqueda de rutas, ganancia neta, find_best_routes() (ENGINE.md)
+│   ├── route_optimizer.py      sucursales, tramos, transporte, horario y confianza por ruta
+│   ├── distance_service.py     línea recta (Haversine) u OSRM; interfaz para otros proveedores
+│   ├── schedule_service.py     ¿abierta al llegar? (solo con horario publicado)
+│   ├── confidence_service.py   puntuación 0-100 con razones (no altera el ranking)
+│   ├── opportunity_service.py  cotizaciones de la BD → motor → oportunidades guardadas
+│   ├── cycle_service.py        un ciclo completo + decisión de alertas (SPEC §52)
+│   ├── verification_service.py estados, razones, ejecuciones, expiración (SPEC §21, §45)
+│   ├── history_service.py      estadísticas del historial (SPEC §29, §33)
+│   └── report.py               texto del Top N (formato SPEC §46)
+├── notifications/
+│   ├── messages.py             alerta Telegram (SPEC §22) y mensajes de verificación (SPEC §20)
+│   └── telegram.py             envío por Bot API (o al log si no está configurado)
+├── api/
+│   ├── routes.py               FastAPI: /api/top, quotes, houses, opportunities, stats
+│   └── static/index.html       panel (Top, oportunidades, cotizaciones, casas con mapa, estadísticas)
 └── database/
-    ├── db.py                  engine/sesiones; SQLite ahora, PostgreSQL vía DATABASE_URL
-    └── models.py              todas las tablas del SPEC §30 (+ branches)
+    ├── db.py                   engine/sesiones; SQLite ahora, PostgreSQL vía DATABASE_URL
+    └── models.py               todas las tablas del SPEC §30 (+ branches)
 data/
-├── exchange_houses.json       registro manual de casas (solo datos con fuente)
-└── manual_quotes.csv          cotizaciones manuales
-docs/SPEC.md                   especificación completa
+├── exchange_houses.json        registro manual de casas (solo datos con fuente)
+└── manual_quotes.csv           cotizaciones manuales
+deploy/                         unidades systemd (bot y panel)
+scripts/geocode_branches.py     coordenadas desde OpenStreetMap Nominatim
 ```
 
-## Flujo de la Fase 1
+## Ciclo (SPEC §52)
 
 ```text
-scrapers (aislados) ──► NormalizedQuote.validate() ──► detect_anomalies() ──► quotes (historial)
-                                                                       └──► scraper_runs (auditoría)
+scrapers (aislados) → validate() → detect_anomalies() → quotes (historial completo)
+        ↓
+quotes recientes → build_graph() → search_routes() → Top candidatas
+        ↓
+route_optimizer: sucursales, km, minutos, transporte, horario, confianza → re-ranking por ganancia neta
+        ↓
+opportunities (todas las del Top) → alerta Telegram si es nueva o mejoró → expiración de antiguas
 ```
-
-## Fases siguientes (dónde encaja cada pieza)
-
-| Fase | Módulos nuevos |
-|------|----------------|
-| 2 ✅ | `services/arbitrage_engine.py` (grafo de aristas por casa, rutas 1..MAX_STEPS, CLP intermedio, ciclos), `find_best_routes()` |
-| 3 | comisiones (publicadas o `DEFAULT_COMMISSION_*`), disponibilidad, montos mín/máx, cotizaciones antiguas, Top N |
-| 4 | `services/distance_service.py` (interfaz con implementación Haversine y OSRM), transporte, `confidence_service.py` |
-| 5 | `notifications/telegram.py`, mensajes de verificación por WhatsApp/teléfono |
-| 6 | `verification_service.py`, `history_service.py`, comando para cambiar estados |
-| 7 | `api/` FastAPI + dashboard |
 
 ## Ajustes respecto del SPEC §40 (y por qué)
 
@@ -78,3 +84,10 @@ scrapers (aislados) ──► NormalizedQuote.validate() ──► detect_anomal
 7. **Comando `probe`.** Para sitios que cargan precios con JavaScript, guarda el HTML
    estático, el renderizado y las respuestas JSON del navegador, para encontrar la
    API pública (preferida según SPEC §7) sin adivinar.
+8. **Margen de seguridad por tasa.** `SAFETY_MARGIN_PERCENT` empeora cada tasa usada, así
+   que una ruta con más operaciones absorbe más margen (más pasos = más riesgo).
+9. **Transporte dentro del ranking.** El costo de transporte se resta de la ganancia neta
+   (SPEC §26), así que sí puede cambiar el orden; la distancia y el tiempo por sí mismos solo
+   afectan la confianza.
+10. **Fase 8 (ML) no implementada.** Necesita semanas de historial real (cotizaciones,
+   verificaciones y ejecuciones). La base de datos ya guarda todo lo necesario.

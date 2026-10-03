@@ -42,7 +42,7 @@ from __future__ import annotations
 import logging
 from collections import defaultdict
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Iterable, Literal
 
 from app.config.settings import Settings, get_settings
@@ -93,6 +93,16 @@ class Edge:
                 out -= fixed
         return out * (1 - pct / 100)
 
+    def amount_ok(self, amount_in: float, amount_out: float) -> bool:
+        """Respeta montos mínimos/máximos publicados (SPEC §15), en unidades de la divisa cotizada."""
+        q = self.quote
+        if q.min_amount is None and q.max_amount is None:
+            return True
+        foreign = amount_out if self.side == "sell" else amount_in
+        if q.min_amount is not None and foreign < q.min_amount:
+            return False
+        return q.max_amount is None or foreign <= q.max_amount
+
     def describe(self) -> str:
         where = f"{self.house}" + (f" ({self.branch})" if self.branch else "")
         return f"{self.from_currency}→{self.to_currency}@{where}"
@@ -127,6 +137,10 @@ def build_graph(
     """
     graph = CurrencyGraph()
     for q in quotes:
+        if q.availability is False:
+            # La casa publica que no tiene la divisa: la operación no es ejecutable (SPEC §15).
+            logger.info("Sin disponibilidad publicada: %s %s; se omite", q.exchange_house, q.currency)
+            continue
         if q.commission_unknown:
             pct, fixed = default_commission_percent, default_commission_fixed
             estimated = pct is not None or fixed is not None
@@ -164,6 +178,9 @@ class RouteStep:
     commission_unknown: bool
     quote_flags: list[str]
     timestamp_collected: datetime
+    quote_age_minutes: float
+    availability: bool | None
+    branch_used: str | None = None  # sucursal física elegida para este paso (Fase 4)
 
 
 @dataclass
@@ -183,10 +200,15 @@ class Route:
     houses: list[str]
     currencies: list[str]
     flags: list[str]
-    distance_km: float | None = None  # Fase 4
-    estimated_minutes: float | None = None  # Fase 4
-    confidence: str | None = None  # Fase 4
+    distance_km: float | None = None
+    estimated_minutes: float | None = None
+    confidence: str | None = None  # HIGH / MEDIUM / LOW
+    confidence_score: float | None = None  # 0-100; nunca altera el ranking (SPEC §34)
+    executable_now: bool | None = None  # None = horario desconocido
+    warnings: list[str] = field(default_factory=list)
+    legs: list[dict] = field(default_factory=list)  # tramos de traslado entre sucursales
     edges: tuple[Edge, ...] = field(default=(), repr=False)
+    stored_signature: str | None = None  # para rutas reconstruidas desde la BD (sin aristas)
 
     @property
     def net_final_clp(self) -> float:
@@ -194,6 +216,8 @@ class Route:
 
     @property
     def signature(self) -> str:
+        if not self.edges and self.stored_signature:
+            return self.stored_signature
         return " | ".join(e.describe() for e in self.edges)
 
     @property
@@ -216,6 +240,10 @@ class Route:
             "distance_km": self.distance_km,
             "estimated_minutes": self.estimated_minutes,
             "confidence": self.confidence,
+            "confidence_score": self.confidence_score,
+            "executable_now": self.executable_now,
+            "warnings": self.warnings,
+            "legs": self.legs,
             "route": [s.__dict__ | {"timestamp_collected": s.timestamp_collected.isoformat()} for s in self.route],
             "quotes": [s.quote_id for s in self.route],
             "houses": self.houses,
@@ -257,7 +285,11 @@ class SearchStats:
     valid_routes: int = 0
 
 
-def _evaluate(edges: tuple[Edge, ...], initial: float, base: str, margin: float) -> Route:
+def _evaluate(
+    edges: tuple[Edge, ...], initial: float, base: str, margin: float,
+    now: datetime | None = None, max_quote_age_minutes: float | None = None,
+) -> Route:
+    now = now or datetime.now(timezone.utc)
     gross_final = simulate(edges, initial, 0.0, with_commission=False)
     after_comm = simulate(edges, initial, 0.0, with_commission=True)
     after_margin = simulate(edges, initial, margin, with_commission=True)
@@ -275,13 +307,22 @@ def _evaluate(edges: tuple[Edge, ...], initial: float, base: str, margin: float)
             flags.add("COMMISSION_UNKNOWN")
         if e.commission_estimated:
             flags.add("COMMISSION_ESTIMATED")
+        collected = q.timestamp_collected
+        if collected.tzinfo is None:
+            collected = collected.replace(tzinfo=timezone.utc)
+        age = max(0.0, (now - collected).total_seconds() / 60)
+        if max_quote_age_minutes is not None and age > max_quote_age_minutes:
+            flags.add("STALE_QUOTE")
+        if q.availability is None:
+            flags.add("AVAILABILITY_UNKNOWN")
         steps.append(RouteStep(
             position=i, house=e.house, branch=e.branch, from_currency=e.from_currency, to_currency=e.to_currency,
             rate_used="sell_rate" if e.side == "sell" else "buy_rate", rate=e.rate, amount_in=amount,
             amount_out=out, quote_id=q.quote_id, commission_percent=e.commission_percent,
             commission_fixed=e.commission_fixed, commission_estimated=e.commission_estimated,
             commission_unknown=q.commission_unknown, quote_flags=sorted(f.value for f in q.flags),
-            timestamp_collected=q.timestamp_collected,
+            timestamp_collected=q.timestamp_collected, quote_age_minutes=age, availability=q.availability,
+            branch_used=e.branch,
         ))
         amount = out
 
@@ -317,6 +358,8 @@ def search_routes(
     beam_width: int = 100,
     safety_margin_percent: float = 0.0,
     stats: SearchStats | None = None,
+    now: datetime | None = None,
+    max_quote_age_minutes: float | None = None,
 ) -> list[Route]:
     """Todas las rutas válidas que empiezan y terminan en ``initial_currency`` con ganancia neta > 0.
 
@@ -336,7 +379,7 @@ def search_routes(
                 if edge.key in st.used:
                     continue
                 out = edge.convert(st.amount, margin)
-                if out <= 0:
+                if out <= 0 or not edge.amount_ok(st.amount, out):
                     continue
                 previous = st.best_seen.get(edge.to_currency)
                 if previous is not None and out <= previous:
@@ -358,7 +401,7 @@ def search_routes(
                     canonical = frozenset(e.key for e in st.edges)  # mismo conjunto de operaciones = misma ruta
                     if canonical in found:
                         continue
-                    route = _evaluate(st.edges, initial_amount, initial_currency, margin)
+                    route = _evaluate(st.edges, initial_amount, initial_currency, margin, now, max_quote_age_minutes)
                     if route.net_profit_clp > 0:
                         found[canonical] = route
         if not frontier:
@@ -384,9 +427,24 @@ def find_best_routes(
     top_n: int | None = None,
     settings: Settings | None = None,
     stats: SearchStats | None = None,
+    directory: dict | None = None,
+    distance_provider=None,
+    now: datetime | None = None,
 ) -> list[Route]:
-    """Función principal (SPEC §25). Los parámetros omitidos se toman de ``.env``."""
+    """Función principal (SPEC §25). Los parámetros omitidos se toman de ``.env``.
+
+    1. arma el grafo y busca todas las rutas con ganancia neta positiva;
+    2. toma las ``CANDIDATE_ROUTES`` mejores y les calcula sucursales, distancia,
+       tiempo, transporte, horario y confianza (``route_optimizer``);
+    3. reordena por ganancia neta (ya con transporte) y devuelve el Top N.
+
+    ``directory`` es ``{slug: ExchangeHouse}`` con sucursales; sin él la distancia
+    queda desconocida y la ruta lo indica.
+    """
+    from app.services.route_optimizer import enrich_routes
+
     settings = settings or get_settings()
+    now = now or datetime.now(timezone.utc)
     quotes = list(quotes)
     graph = build_graph(quotes, settings.default_commission_percent, settings.default_commission_fixed_clp)
     stats = stats if stats is not None else SearchStats()
@@ -398,12 +456,17 @@ def find_best_routes(
         beam_width=settings.search_beam_width,
         safety_margin_percent=settings.safety_margin_percent,
         stats=stats,
+        now=now,
+        max_quote_age_minutes=settings.max_quote_age_minutes,
     )
     logger.info(
         "%d cotizaciones, %d divisas, %d aristas; %d rutas generadas, %d rutas válidas",
         len(quotes), len(graph.currencies), graph.edge_count, stats.candidate_routes, stats.valid_routes,
     )
-    ranked = rank_routes(routes, top_n or settings.top_routes)
+    top_n = top_n or settings.top_routes
+    candidates = rank_routes(routes, max(settings.candidate_routes, top_n))
+    enriched = enrich_routes(candidates, directory or {}, settings, now=now, provider=distance_provider)
+    ranked = rank_routes([r for r in enriched if r.net_profit_clp > 0], top_n)
     logger.info("Top %d calculado", len(ranked))
     return ranked
 

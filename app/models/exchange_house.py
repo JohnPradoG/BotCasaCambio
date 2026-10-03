@@ -18,6 +18,10 @@ class Branch:
     phone: str | None = None
     whatsapp: str | None = None
     opening_hours: str | None = None  # texto tal como lo publica la fuente
+    # Horario estructurado, solo si la fuente lo publica completo. Formato:
+    # {"mon": ["09:00", "18:00"], "sat": ["10:00", "14:00"], "sun": null}
+    # Día ausente = desconocido; null = cerrado.
+    schedule: dict | None = None
     latitude: float | None = None
     longitude: float | None = None
     source_url: str | None = None

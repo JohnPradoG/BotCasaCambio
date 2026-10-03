@@ -78,3 +78,22 @@ def house_stats(session: Session, max_age_minutes: int) -> HouseStats:
         select(func.count(func.distinct(QuoteRow.exchange_house_id))).where(QuoteRow.timestamp_collected >= since)
     ) or 0
     return HouseStats(discovered=discovered, with_active_quotes=active, unavailable=discovered - active)
+
+
+def house_directory(session: Session) -> dict[str, ExchangeHouse]:
+    """Casas y sucursales registradas, como modelos de dominio, para el motor."""
+    from app.models.exchange_house import Branch
+
+    directory: dict[str, ExchangeHouse] = {}
+    for row in session.scalars(select(ExchangeHouseRow)):
+        directory[row.slug] = ExchangeHouse(
+            slug=row.slug, name=row.name, website=row.website, quotes_url=row.quotes_url, phone=row.phone,
+            whatsapp=row.whatsapp, source_url=row.source_url, scraper=row.scraper, notes=row.notes,
+            branches=[
+                Branch(name=b.name, address=b.address, comuna=b.comuna, phone=b.phone, whatsapp=b.whatsapp,
+                       opening_hours=b.opening_hours, schedule=b.schedule, latitude=b.latitude,
+                       longitude=b.longitude, source_url=b.source_url, verified=b.verified, notes=b.notes)
+                for b in row.branches
+            ],
+        )
+    return directory

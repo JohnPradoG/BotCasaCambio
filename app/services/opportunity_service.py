@@ -3,14 +3,15 @@
 from __future__ import annotations
 
 import logging
+from datetime import datetime
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.database.models import OpportunityRow, QuoteRow, RouteRow, RouteStepRow
 from app.models.opportunity import OpportunityStatus
-from app.models.quote import NormalizedQuote, QuoteFlag
-from app.services.arbitrage_engine import Route
+from app.models.quote import NormalizedQuote, QuoteFlag, utcnow
+from app.services.arbitrage_engine import Route, RouteStep
 from app.services.house_service import ensure_house
 from app.services.quote_service import latest_quotes
 
@@ -45,8 +46,11 @@ def row_to_quote(row: QuoteRow) -> NormalizedQuote:
     )
 
 
-def quotes_for_engine(session: Session, max_age_minutes: int | None = None) -> list[NormalizedQuote]:
-    """Última cotización por (casa, divisa, sucursal), lista para el motor."""
+def quotes_for_engine(session: Session, max_age_minutes: float | None = None) -> list[NormalizedQuote]:
+    """Última cotización por (casa, divisa, sucursal), lista para el motor.
+
+    Las más antiguas que ``max_age_minutes`` no se usan para detectar (siguen en el historial).
+    """
     return [row_to_quote(r) for r in latest_quotes(session, max_age_minutes)]
 
 
@@ -88,7 +92,12 @@ def save_routes(session: Session, routes: list[Route]) -> list[OpportunityRow]:
             estimated_minutes=route.estimated_minutes,
             confidence=route.confidence,
             status=status.value,
+            confidence_score=route.confidence_score,
+            executable_now=route.executable_now,
             quote_ids=[s.quote_id for s in route.route if s.quote_id is not None],
+            signature=route.signature,
+            flags=route.flags,
+            last_status_change_at=utcnow(),
             details=route.to_dict(),
         )
         session.add(opp)
@@ -96,3 +105,23 @@ def save_routes(session: Session, routes: list[Route]) -> list[OpportunityRow]:
     session.flush()
     logger.info("%d oportunidades guardadas", len(saved))
     return saved
+
+
+def route_from_row(opp: OpportunityRow) -> Route:
+    """Reconstruye la ruta guardada (para mostrarla o generar mensajes de verificación)."""
+    d = dict(opp.details or {})
+    steps = []
+    for raw in d.get("route", []):
+        raw = dict(raw)
+        raw["timestamp_collected"] = datetime.fromisoformat(raw["timestamp_collected"])
+        steps.append(RouteStep(**raw))
+    return Route(
+        rank=d.get("rank"), initial_currency="CLP", initial_clp=d["initial_clp"], final_clp=d["final_clp"],
+        gross_profit_clp=d["gross_profit_clp"], commissions_clp=d["commissions_clp"],
+        safety_margin_clp=d["safety_margin_clp"], transport_clp=d["transport_clp"],
+        net_profit_clp=d["net_profit_clp"], profit_percent=d["profit_percent"], steps=d["steps"], route=steps,
+        houses=d["houses"], currencies=d["currencies"], flags=d.get("flags", []), distance_km=d.get("distance_km"),
+        estimated_minutes=d.get("estimated_minutes"), confidence=d.get("confidence"),
+        confidence_score=d.get("confidence_score"), executable_now=d.get("executable_now"),
+        warnings=d.get("warnings", []), legs=d.get("legs", []), stored_signature=d.get("signature"),
+    )

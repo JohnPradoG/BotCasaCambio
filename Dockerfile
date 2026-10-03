@@ -9,4 +9,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 # RUN pip install --no-cache-dir -r requirements-browser.txt && python -m playwright install --with-deps chromium
 
 COPY . .
-CMD ["python", "-m", "app.main", "loop", "--interval", "180"]
+CMD ["python", "-m", "app.main", "loop"]

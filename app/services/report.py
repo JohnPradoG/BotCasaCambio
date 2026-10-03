@@ -28,10 +28,14 @@ def format_route(route: Route, detailed: bool = True) -> str:
         f"Casas: {' → '.join(route.houses)}",
         f"Pasos: {route.steps}",
     ]
-    lines.append(f"Distancia: {'pendiente (Fase 4)' if route.distance_km is None else f'{route.distance_km:.1f} km'}")
-    lines.append(f"Tiempo: {'pendiente (Fase 4)' if route.estimated_minutes is None else f'{route.estimated_minutes:.0f} min'}")
-    conf = _CONFIDENCE_ES.get(route.confidence or "", "pendiente (Fase 4)")
-    lines.append(f"Confianza: {conf}")
+    dist = "desconocida (faltan coordenadas)" if route.distance_km is None else f"{route.distance_km:.1f} km".replace(".", ",")
+    lines.append(f"Distancia: {dist}")
+    lines.append(f"Tiempo: {'desconocido' if route.estimated_minutes is None else f'{route.estimated_minutes:.0f} min'}")
+    conf = _CONFIDENCE_ES.get(route.confidence or "", "sin calcular")
+    score = f" ({route.confidence_score:.0f}/100)" if route.confidence_score is not None else ""
+    lines.append(f"Confianza: {conf}{score}")
+    if route.executable_now is False:
+        lines.append("⏰ Alguna casa está cerrada ahora (oportunidad para más tarde).")
     if detailed:
         lines += [
             "",
@@ -47,13 +51,16 @@ def format_route(route: Route, detailed: bool = True) -> str:
                 f"  {s.position}. {s.house}{f' ({s.branch})' if s.branch else ''}: {s.from_currency} → {s.to_currency} "
                 f"a {units(s.rate)} ({label}) · {units(s.amount_in)} {s.from_currency} → {units(s.amount_out)} {s.to_currency}"
             )
-        sens = sensitivity(route)
-        lines.append("")
-        lines.append("Si las tasas empeoran: " + ", ".join(
-            f"-{pct * 100:.1f}%: {clp(v, sign=True)}".replace(".", ",", 1) for pct, v in sens.items()
-        ))
+        if route.edges:  # las rutas leídas de la BD no guardan aristas
+            sens = sensitivity(route)
+            lines.append("")
+            lines.append("Si las tasas empeoran: " + ", ".join(
+                f"-{pct * 100:.1f}%: {clp(v, sign=True)}".replace(".", ",", 1) for pct, v in sens.items()
+            ))
     if route.flags:
         lines.append(f"⚠️ Banderas: {', '.join(route.flags)}")
+    if detailed and route.warnings:
+        lines.append("Riesgos: " + "; ".join(w.split(": ", 1)[-1] for w in route.warnings))
     if route.requires_verification:
         lines.append("⚠️ Usa una cotización sospechosa: verificar antes de considerarla real.")
     return "\n".join(lines)
