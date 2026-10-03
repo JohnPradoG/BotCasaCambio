@@ -113,11 +113,12 @@ class WebDiscoveryScraper(BaseScraper):
             if not prev.get("found") and prev.get("last_try"):
                 if now - datetime.fromisoformat(prev["last_try"]) < retry:
                     continue
+            website = house.website if "://" in house.website else f"https://{house.website}"
             try:
-                rates, url = self.find_rates(house.website)
+                rates, url = self.find_rates(website)
                 error = None
             except Exception as exc:  # noqa: BLE001 - un sitio caído no detiene a los demás
-                rates, url, error = [], house.website, f"{type(exc).__name__}: {exc}"
+                rates, url, error = [], website, f"{type(exc).__name__}: {exc}"
                 self.log.info("%s: %s", house.slug, error)
             state[house.slug] = {"last_try": now.isoformat(), "found": len(rates), "url": url, "error": error}
             for r in rates:
