@@ -136,3 +136,15 @@ def find_inline_rates(text: str, decimal_separator: str | None = None, window: i
         if values.get("buy") is not None or values.get("sell") is not None:
             results.append(RawRate(currency, values.get("buy"), values.get("sell"), raw=m.group(0)))
     return results
+
+
+def extract_rates(html: str, decimal_separator: str | None = None) -> list[RawRate]:
+    """Tablas Moneda | Compra | Venta y, si no hay, texto "Compra X · Venta Y". Una fila por divisa."""
+    rates = parse_html_rate_table(html, decimal_separator)
+    if not rates:
+        rates = find_inline_rates(BeautifulSoup(html, "html.parser").get_text(" ", strip=True), decimal_separator)
+    seen: dict[str, RawRate] = {}
+    for r in rates:
+        if r.currency != "CLP":
+            seen.setdefault(r.currency, r)
+    return list(seen.values())

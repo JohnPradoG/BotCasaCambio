@@ -20,6 +20,7 @@ class QuoteFlag(str, Enum):
     INVERTED_SPREAD = "INVERTED_SPREAD"  # compra > venta: posible error de publicación o etiquetas invertidas
     MISSING_BUY = "MISSING_BUY"
     MISSING_SELL = "MISSING_SELL"
+    AUTO_DISCOVERED = "AUTO_DISCOVERED"  # leída por el descubrimiento automático, sin scraper dedicado
 
 
 class QuoteValidationError(ValueError):

@@ -232,7 +232,7 @@
       "phone": "+56 2 2233 5327",
       "whatsapp": null,
       "source_url": "https://moreexchange.cl/",
-      "scraper": null,
+      "scraper": "more_exchange",
       "notes": "Leído de moreexchange.cl el 2026-10-03 (lectura automática, pendiente de verificación humana). Publica precios, pero se cargan con JavaScript ('Loading data...'): falta revisar de dónde vienen antes de escribir el scraper. Mientras, sus precios se pueden cargar en data/manual_quotes.csv. Otro teléfono publicado: +56 9 6906 0570.",
       "branches": [
         {
@@ -505,7 +505,7 @@
       "phone": "+56 2 2233 1865",
       "whatsapp": null,
       "source_url": "https://cstgo.cl/",
-      "scraper": null,
+      "scraper": "cambios_santiago",
       "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana). Tiene tabla 'VALORES EN TIEMPO REAL' (Compramos/Vendemos) cargada con JavaScript: falta encontrar su fuente para el scraper.",
       "branches": [
         {

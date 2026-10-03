@@ -115,3 +115,22 @@ def _dedupe(rates: list[RawRate]) -> list[RawRate]:
         if r.currency != "CLP":
             seen.setdefault(r.currency, r)
     return list(seen.values())
+
+
+class RenderedTableScraper(HtmlTableScraper):
+    """Como ``HtmlTableScraper``, pero si la tabla viene vacía abre la página con un navegador."""
+
+    #: sucursal a la que corresponden los precios publicados (si la página lo indica)
+    branch: str | None = None
+
+    def scrape(self) -> list[NormalizedQuote]:
+        try:
+            return self.parse(self.http_get(self.source_url).text, branch=self.branch)
+        except StructureChangedError:
+            self.log.info("%s: tabla vacía en el HTML estático; se abre con navegador", self.slug)
+        from app.scrapers.browser import render_page
+
+        self.check_robots(self.source_url)
+        html, _ = render_page(self.source_url, self.settings)
+        return self.parse(html, branch=self.branch)
+

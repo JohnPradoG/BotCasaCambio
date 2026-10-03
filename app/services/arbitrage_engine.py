@@ -224,7 +224,8 @@ class Route:
 
     @property
     def requires_verification(self) -> bool:
-        return any(f in self.flags for f in (QuoteFlag.ANOMALOUS_QUOTE.value, QuoteFlag.INVERTED_SPREAD.value))
+        return any(f in self.flags for f in (QuoteFlag.ANOMALOUS_QUOTE.value, QuoteFlag.INVERTED_SPREAD.value,
+                                             QuoteFlag.AUTO_DISCOVERED.value))
 
     def to_dict(self) -> dict:
         return {

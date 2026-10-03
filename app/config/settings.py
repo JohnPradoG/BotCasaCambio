@@ -99,7 +99,10 @@ class Settings(BaseSettings):
 
     # --- Scrapers ---
     # Lista separada por comas de slugs de scrapers activos. Vacío = todos los registrados.
-    enabled_scrapers: str = "manual_csv"
+    enabled_scrapers: str = "manual_csv,web_discovery"
+    # Descubrimiento automático: webs de casas sin scraper. Reintento de las que no tenían precios.
+    discovery_retry_hours: float = Field(24, ge=0)
+    discovery_use_browser: bool = True
     scraper_timeout_seconds: float = Field(15, gt=0)
     scraper_retries: int = Field(2, ge=0)
     scraper_backoff_seconds: float = Field(2, ge=0)

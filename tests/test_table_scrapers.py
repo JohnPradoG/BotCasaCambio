@@ -127,3 +127,61 @@ def test_quote_with_old_published_time_is_not_used(engine, settings):
             save_quote(s, NormalizedQuote(house, "USD", 970, 990, "test://", timestamp_source=ts).validate(), None)
         assert [q.exchange_house for q in quotes_for_engine(s, 24 * 60)] == ["new"]
         assert len(quotes_for_engine(s, None)) == 2  # sin límite, se ve todo el historial
+
+
+class _Resp:
+    def __init__(self, text, status=200):
+        self.text, self.status_code = text, status
+
+    def raise_for_status(self):
+        pass
+
+
+class _Sess:
+    headers: dict = {}
+
+    def __init__(self, pages):
+        self.pages = pages
+
+    def get(self, url, **kw):
+        return _Resp(self.pages[url])
+
+
+def test_rendered_scraper_uses_static_table_when_present(settings):
+    from app.scrapers.exchanges.cambios_santiago import CambiosSantiagoScraper
+
+    html = ("<table><tr><th>DIVISA</th><th>COMPRAMOS</th><th>VENDEMOS</th></tr>"
+            "<tr><td>Dólar</td><td>970</td><td>990</td></tr></table>")
+    s = settings.model_copy(update={"respect_robots_txt": False})
+    [q] = CambiosSantiagoScraper(s, session=_Sess({"https://cstgo.cl/": html})).run().quotes
+    assert (q.currency, q.buy_rate, q.sell_rate, q.branch) == ("USD", 970, 990, "Providencia")
+
+
+def test_rendered_scraper_without_playwright_reports_structure_change(settings, monkeypatch):
+    import builtins
+
+    from app.scrapers.exchanges.cambios_santiago import CambiosSantiagoScraper
+
+    real_import = builtins.__import__
+
+    def no_playwright(name, *a, **kw):
+        if name.startswith("playwright"):
+            raise ImportError("sin playwright")
+        return real_import(name, *a, **kw)
+
+    monkeypatch.setattr(builtins, "__import__", no_playwright)
+    empty = "<table><tr><th>DIVISA</th><th>COMPRAMOS</th><th>VENDEMOS</th></tr></table>"
+    s = settings.model_copy(update={"respect_robots_txt": False})
+    result = CambiosSantiagoScraper(s, session=_Sess({"https://cstgo.cl/": empty})).run()
+    assert result.status is ScraperStatus.STRUCTURE_CHANGED and "Playwright" in result.error
+
+
+def test_probe_site_finds_static_rates_and_errors(settings):
+    from app.services.probe_service import _Fetcher, probe_site
+
+    s = settings.model_copy(update={"respect_robots_txt": False})
+    html = (FIXTURES / "inmonex.html").read_text(encoding="utf-8")
+    ok = probe_site("https://x.cl/", s, use_browser=False, fetcher=_Fetcher(s, session=_Sess({"https://x.cl/": html})))
+    assert ok["static_rates"] == 5 and ok["static_sample"][0].startswith("USD")
+    bad = probe_site("https://y.cl/", s, use_browser=False, fetcher=_Fetcher(s, session=_Sess({})))
+    assert "error" in bad

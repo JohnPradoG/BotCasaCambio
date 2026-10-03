@@ -60,9 +60,12 @@ def assess(route, settings: Settings) -> Confidence:
     elif route.executable_now is None:
         penalty(5, "horario desconocido")
 
-    if route.requires_verification:
+    if "ANOMALOUS_QUOTE" in route.flags or "INVERTED_SPREAD" in route.flags:
         penalty(40, "usa una cotización sospechosa (ANOMALOUS_QUOTE / INVERTED_SPREAD)")
         cap = min(cap, 49)
+    if "AUTO_DISCOVERED" in route.flags:
+        penalty(20, "usa precios leídos automáticamente de una web sin scraper revisado")
+        cap = min(cap, 74)
 
     if sensitivity(route, (0.005,))[0.005] <= 0:
         penalty(10, "deja de ser rentable si las tasas empeoran 0,5%")

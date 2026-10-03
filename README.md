@@ -31,7 +31,13 @@ maximicen el **CLP final neto** partiendo de un capital configurable. El bot sol
 | `brollano` | Cambios Brollano (Providencia y Agustinas, una página por sucursal) | **sin verificar en vivo**: tabla HTML con fecha publicada por sucursal; una página con fecha vieja no se usa. |
 | `cambio_costero` | Cambio Costero (3 locales en el centro) | **sin verificar en vivo**: solo publica su precio de venta (la compra queda vacía). |
 | `inmonex` | Inmonex (inmonex.cl, Santiago Centro) | **sin verificar en vivo**: tabla HTML estática, sin hora publicada; la casa negocia la tasa del día en sucursal. |
+| `more_exchange` | More Exchange (precios de la Casa Central San Sebastián) | **sin verificar**: tabla cargada con JavaScript; se lee con navegador (Playwright). |
+| `cambios_santiago` | Cambios Santiago (cstgo.cl, Providencia) | **sin verificar**: tabla "Compramos/Vendemos" cargada con JavaScript; se lee con navegador. |
+| `web_discovery` | todas las casas registradas con web y sin scraper propio | automático: busca una tabla de precios en la portada, en enlaces de "precios"/"cotizaciones" y, si hay Playwright, con navegador. Sus precios quedan con bandera `AUTO_DISCOVERED` (ruta "por verificar" y menos confianza). Activo por defecto. |
 | `afex` | AFEX (afex.cl) | **sin verificar**: el sitio carga los precios con JavaScript y no se pudo inspeccionar desde el entorno de desarrollo. Ejecutar `python -m app.main probe afex` en el VPS para confirmarlo o ajustarlo. Desactivado por defecto. |
+
+**Revisar todo de una vez:** `python -m app.main probe-all` ejecuta cada scraper y revisa la web
+de cada casa registrada; deja el resultado en `data/probe/report.json`.
 
 Gamaex, Cambios Lyon e Inmonex se leyeron el 2026-10-03 a través de una conversión a
 texto de sus páginas (el entorno de desarrollo no puede descargar sitios .cl), así que
@@ -220,6 +226,7 @@ class MiCasaScraper(BaseScraper):
         ]
 ```
 
+   Si la casa tiene web y no le haces scraper, `web_discovery` igual intentará leer sus precios.
 3. Agrega el slug a `ENABLED_SCRAPERS` y prueba con `python -m app.main scrape --only mi_casa`.
 4. Agrega un test con un HTML de ejemplo en `tests/fixtures/`.
 

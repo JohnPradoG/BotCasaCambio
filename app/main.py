@@ -5,6 +5,7 @@
     python -m app.main quotes               # últimas cotizaciones guardadas
     python -m app.main houses               # casas descubiertas / con cotización / sin datos
     python -m app.main scrapers             # scrapers disponibles y su estado
+    python -m app.main probe-all            # revisa todas las webs de casas (reporte para ajustar scrapers)
     python -m app.main probe afex           # diagnóstico de un sitio para ajustar su scraper
     python -m app.main analyze [--capital 5000000 --steps 4 --top 5 --save]
     python -m app.main run-once             # un ciclo completo: scrape + rutas + guardado + alerta
@@ -103,6 +104,21 @@ def cmd_scrapers(_args) -> int:
     for slug, cls in sorted(available_scrapers().items()):
         state = "verificado" if cls.verified else "SIN VERIFICAR"
         print(f"{slug:15s} {'activo' if slug in enabled else 'inactivo':9s} {state:14s} {cls.source_url}")
+    return 0
+
+
+def cmd_probe_all(args) -> int:
+    from app.scrapers.browser import playwright_available
+    from app.services.probe_service import probe_all, summarize
+
+    use_browser = not args.no_browser and playwright_available()
+    if not args.no_browser and not use_browser:
+        print("Playwright no está instalado: se revisa solo el HTML (pip install -r requirements-browser.txt "
+              "&& python -m playwright install --with-deps chromium)")
+    out = DATA_DIR / "probe"
+    report = probe_all(get_settings(), out, use_browser)
+    print(summarize(report))
+    print(f"\nReporte completo: {out / 'report.json'} (envíalo para ajustar los scrapers)")
     return 0
 
 
@@ -338,6 +354,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.set_defaults(func=cmd_quotes)
     sub.add_parser("houses").set_defaults(func=cmd_houses)
     sub.add_parser("scrapers").set_defaults(func=cmd_scrapers)
+    p = sub.add_parser("probe-all", help="revisa todas las webs de casas y deja data/probe/report.json")
+    p.add_argument("--no-browser", action="store_true")
+    p.set_defaults(func=cmd_probe_all)
     p = sub.add_parser("probe")
     p.add_argument("slug")
     p.set_defaults(func=cmd_probe)
