@@ -55,6 +55,15 @@ Los datos de casas en `data/exchange_houses.json` vienen de fuentes públicas, c
 
 ## Instalación en Linux (Ubuntu/Debian, VPS económico)
 
+Instalación en un comando (como root; pide el token y el chat id de Telegram, deja el bot
+corriendo con systemd y revisa todas las webs). Se puede repetir para actualizar:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/JohnPradoG/BotCasaCambio/main/scripts/install_vps.sh | bash
+```
+
+Paso a paso:
+
 ```bash
 sudo apt update && sudo apt install -y python3 python3-venv git
 sudo useradd -m -s /bin/bash bot          # opcional: usuario dedicado
