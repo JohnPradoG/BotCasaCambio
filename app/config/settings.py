@@ -104,7 +104,7 @@ class Settings(BaseSettings):
     discovery_retry_hours: float = Field(24, ge=0)
     discovery_use_browser: bool = True
     # Pedido diario de precios (enlaces de WhatsApp por Telegram) a casas sin precio reciente.
-    price_request_time: str | None = "09:30"  # hora local; vacío = no enviar
+    price_request_time: str | None = None  # hora local, p. ej. "09:30"; vacío = no enviar
     price_request_currencies: str = "USD,EUR,BRL,ARS,PEN"
     scraper_timeout_seconds: float = Field(15, gt=0)
     scraper_retries: int = Field(2, ge=0)
