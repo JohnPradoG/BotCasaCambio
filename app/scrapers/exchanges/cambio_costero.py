@@ -5,8 +5,11 @@ el sitio dice "Si deseas vendernos tus divisas debes acudir directamente a nuest
 oficinas", así que el precio de compra no está publicado y queda en ``None``.
 La página aclara que los precios son referenciales.
 
-Estado: estructura leída el 2026-10-03 a través de una conversión a texto de la
-página; falta probar con ``python -m app.main scrape --only cambio_costero``.
+El carrusel de portada muestra además otro número junto a algunas divisas (p. ej.
+"USD 970 · $988"), sin etiqueta: no se usa como compra porque la página no dice qué es.
+
+Estado: estructura verificada con el HTML real descargado desde el VPS el 2026-10-03
+(carruseles ``.wcps-items`` del plugin WooCommerce Products Slider).
 """
 
 from __future__ import annotations
@@ -24,9 +27,11 @@ def parse_woocommerce_prices(html: str) -> dict[str, float]:
     """{divisa: precio} de un listado de productos WooCommerce (título + precio)."""
     soup = BeautifulSoup(html, "html.parser")
     prices: dict[str, float] = {}
-    for product in soup.select("li.product, div.product, .products .product"):
-        title = product.select_one(".woocommerce-loop-product__title, h2, h3") or product.find("a")
-        price = product.select_one(".price ins .amount, .price .amount, .amount")
+    # Listado clásico de WooCommerce o carrusel "WooCommerce Products Slider" (.wcps-items).
+    for product in soup.select("li.product, div.product, .products .product, .wcps-items"):
+        title = (product.select_one(".wcps-items-title, .woocommerce-loop-product__title, h2, h3")
+                 or product.find("a", string=True))
+        price = product.select_one(".wcps-items-price .amount, .price ins .amount, .price .amount, .amount")
         if not title or not price:
             continue
         currency = normalize_currency_code(title.get_text(" ", strip=True))

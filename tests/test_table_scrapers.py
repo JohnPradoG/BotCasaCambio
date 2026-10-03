@@ -113,6 +113,17 @@ def test_cambio_costero_is_sell_only(settings):
     assert q["EUR"].sell_rate == 1130 and q["ARS"].sell_rate == 0.66 and q["JPY"].sell_rate == 6.9
 
 
+def test_cambio_costero_reads_wcps_carousel(settings):
+    """HTML real (recortado): los precios vienen en carruseles .wcps-items, no en li.product."""
+    from app.scrapers.exchanges.cambio_costero import CambioCosteroScraper
+
+    html = (FIXTURES / "cambio_costero_wcps.html").read_text(encoding="utf-8")
+    q = by_currency(CambioCosteroScraper(settings).parse(html))
+    assert len(q) == 17 and "ORO" not in q  # 18 productos, uno es la moneda de oro
+    assert (q["USD"].buy_rate, q["USD"].sell_rate) == (None, 988)  # el "970" sin etiqueta no se usa
+    assert q["EUR"].sell_rate == 1130 and q["COP"].sell_rate == 0.35 and q["NZD"].sell_rate == 543
+
+
 def test_quote_with_old_published_time_is_not_used(engine, settings):
     from datetime import timedelta
 
