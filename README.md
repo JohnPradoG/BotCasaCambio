@@ -150,6 +150,23 @@ Para pasar a PostgreSQL: `pip install "psycopg[binary]"` y
 
 Sin Telegram configurado, las alertas quedan en `logs/bot.log`.
 
+### Cargar precios desde el celular (casas sin precios en internet)
+
+Muchas casas del centro solo tienen pizarra. Con `loop` corriendo y Telegram configurado,
+escríbele al bot desde el chat configurado (los demás chats se ignoran):
+
+```text
+/precio gamaex USD 970 990        casa, divisa, compra, venta (- si no sabes uno)
+/precio Cambios Lyon euro 1085 -
+/top                              mejores rutas con lo guardado
+/casas                            nombres de casas registradas
+```
+
+Cada precio queda en `data/manual_quotes.csv` con su hora (reemplaza el anterior de esa
+casa y divisa) y el bot responde con la mejor ruta. Sin Telegram:
+`python -m app.main add-quote gamaex USD 970 990 --source tel:+5622...`.
+Compra = lo que la casa te paga por 1 unidad; venta = lo que te cobra.
+
 ## Cómo se decide el ranking
 
 - Ranking **solo por ganancia neta** = CLP final − capital − comisiones − margen de seguridad − transporte.

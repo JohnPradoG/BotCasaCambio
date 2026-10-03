@@ -14,6 +14,7 @@
     python -m app.main verify 125           # menú para cambiar el estado (SPEC §45)
     python -m app.main verify 125 --status FAILED --reason "No tenían USD"
     python -m app.main stats                # estadísticas del historial
+    python -m app.main add-quote gamaex USD 970 990   # precio de pizarra/teléfono
     python -m app.main telegram-chat-id     # muestra el TELEGRAM_CHAT_ID (escríbele antes al bot)
     python -m app.main telegram-test        # envía un mensaje de prueba
     python -m app.main dashboard            # panel web (FastAPI)
@@ -138,14 +139,81 @@ def cmd_run_once(args) -> int:
     return _cycle(args, scrape=True, save=True, alert=not args.no_alert)
 
 
+def _known_houses() -> dict[str, str]:
+    from app.database.models import ExchangeHouseRow
+
+    init_db()
+    with session_scope() as s:
+        settings = get_settings()
+        if Path(settings.houses_file).exists():
+            sync_houses(s, settings.houses_file)
+        return {h.slug: h.name for h in s.query(ExchangeHouseRow).all()}
+
+
+def _analysis_text(scrape_manual: bool, short: bool) -> str:
+    """Carga los precios manuales (opcional) y devuelve el Top con lo guardado, sin alertar."""
+    settings = get_settings()
+    init_db()
+    with session_scope() as s:
+        if scrape_manual:
+            collect_quotes(s, get_scrapers(["manual_csv"], settings=settings), settings)
+        result = run_cycle(s, settings, scrape=False, save=False, alert=False)
+    if not short:
+        return format_top(result.routes, settings.initial_capital_clp)
+    if not result.routes:
+        return "Por ahora no hay rutas con ganancia neta positiva."
+    best = result.routes[0]
+    return (f"Mejor ruta ahora: {' → '.join(best.currencies)} ({' → '.join(best.houses)})\n"
+            f"Ganancia neta: {clp(best.net_profit_clp, True)} CLP. Usa /top para el detalle.")
+
+
+def make_command_poller():
+    from app.notifications.telegram_commands import CommandHandlers, TelegramCommandPoller
+
+    settings = get_settings()
+    if not settings.telegram_enabled:
+        return None
+    handlers = CommandHandlers(
+        known_houses=_known_houses,
+        after_price=lambda: _analysis_text(scrape_manual=True, short=True),
+        top=lambda: _analysis_text(scrape_manual=True, short=False),
+    )
+    return TelegramCommandPoller(settings, handlers)
+
+
 def cmd_loop(args) -> int:
     interval = args.interval or get_settings().loop_interval_seconds
+    poller = make_command_poller()  # con Telegram configurado, atiende /precio mientras espera
     while True:
         try:
             _cycle(argparse.Namespace(), scrape=True, save=True, alert=True)
         except Exception:  # noqa: BLE001 - el bucle no debe morir
             logger.exception("Error en el ciclo")
-        time.sleep(interval)
+        if poller is None:
+            time.sleep(interval)
+        else:
+            try:
+                poller.wait(interval)
+            except Exception:  # noqa: BLE001
+                logger.exception("Error atendiendo Telegram")
+                time.sleep(interval)
+
+
+def cmd_add_quote(args) -> int:
+    from app.services.manual_entry import ManualEntryError, parse_price_command, save_manual_price
+
+    settings = get_settings()
+    try:
+        price = parse_price_command(" ".join([*args.house, args.currency, args.buy, args.sell]), _known_houses())
+    except ManualEntryError as exc:
+        print(exc)
+        return 1
+    price.branch = args.branch
+    save_manual_price(settings.manual_quotes_file, price, source=args.source, notes=args.notes)
+    print(f"Guardado en {settings.manual_quotes_file}: {price.house} {price.currency} "
+          f"compra={price.buy_rate} venta={price.sell_rate}")
+    print(_analysis_text(scrape_manual=True, short=True))
+    return 0
 
 
 def cmd_opportunities(args) -> int:
@@ -307,6 +375,15 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("stats")
     p.add_argument("--days", type=int, default=30)
     p.set_defaults(func=cmd_stats)
+    p = sub.add_parser("add-quote", help="guarda un precio visto en pizarra o por teléfono")
+    p.add_argument("house", nargs="+", help="casa (slug o nombre)")
+    p.add_argument("currency")
+    p.add_argument("buy", help="compra: lo que la casa paga por 1 unidad (- si no se sabe)")
+    p.add_argument("sell", help="venta: lo que la casa cobra por 1 unidad (- si no se sabe)")
+    p.add_argument("--branch")
+    p.add_argument("--source", default="manual:pizarra", help="p. ej. tel:+56..., manual:pizarra")
+    p.add_argument("--notes")
+    p.set_defaults(func=cmd_add_quote)
     sub.add_parser("telegram-chat-id").set_defaults(func=cmd_telegram_chat_id)
     sub.add_parser("telegram-test").set_defaults(func=cmd_telegram_test)
     p = sub.add_parser("dashboard")
