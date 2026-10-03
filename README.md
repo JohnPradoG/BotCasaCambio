@@ -141,7 +141,8 @@ Para pasar a PostgreSQL: `pip install "psycopg[binary]"` y
 
 1. En Telegram, habla con **@BotFather**, envía `/newbot` y copia el token en `TELEGRAM_BOT_TOKEN`.
 2. Envía cualquier mensaje a tu bot nuevo.
-3. Abre `https://api.telegram.org/bot<TOKEN>/getUpdates` y copia `message.chat.id` en `TELEGRAM_CHAT_ID`.
+3. Ejecuta `python -m app.main telegram-chat-id` y copia la línea `TELEGRAM_CHAT_ID=...` en `.env`
+   (o abre `https://api.telegram.org/bot<TOKEN>/getUpdates` y copia `message.chat.id`).
 4. Ejecuta `python -m app.main telegram-test`.
 
 Sin Telegram configurado, las alertas quedan en `logs/bot.log`.

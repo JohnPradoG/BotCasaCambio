@@ -98,6 +98,26 @@ def test_telegram_notifier_posts():
     assert sess.calls[0][1]["chat_id"] == "123"
 
 
+def test_find_chat_ids():
+    from app.notifications.telegram import find_chat_ids
+
+    class Resp:
+        status_code = 200
+
+        def json(self):
+            return {"ok": True, "result": [
+                {"message": {"chat": {"id": 123, "type": "private", "first_name": "Ana"}}},
+                {"message": {"chat": {"id": 123, "type": "private", "first_name": "Ana"}}},
+            ]}
+
+    class Sess:
+        def get(self, url, timeout):
+            assert url == "https://api.telegram.org/botTOKEN/getUpdates"
+            return Resp()
+
+    assert find_chat_ids("TOKEN", session=Sess()) == [{"id": 123, "type": "private", "name": "Ana"}]
+
+
 def test_cycle_alerts_once_then_respects_cooldown(engine, cycle_settings):
     notifier = FakeNotifier()
     with session_scope(engine) as s:

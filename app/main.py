@@ -14,6 +14,7 @@
     python -m app.main verify 125           # menú para cambiar el estado (SPEC §45)
     python -m app.main verify 125 --status FAILED --reason "No tenían USD"
     python -m app.main stats                # estadísticas del historial
+    python -m app.main telegram-chat-id     # muestra el TELEGRAM_CHAT_ID (escríbele antes al bot)
     python -m app.main telegram-test        # envía un mensaje de prueba
     python -m app.main dashboard            # panel web (FastAPI)
 """
@@ -232,6 +233,22 @@ def cmd_telegram_test(_args) -> int:
     return 0 if ok else 1
 
 
+def cmd_telegram_chat_id(_args) -> int:
+    from app.notifications.telegram import find_chat_ids
+
+    settings = get_settings()
+    if not settings.telegram_bot_token:
+        print("Falta TELEGRAM_BOT_TOKEN en .env")
+        return 1
+    chats = find_chat_ids(settings.telegram_bot_token)
+    if not chats:
+        print("No hay mensajes: abre tu bot en Telegram, envíale /start y vuelve a ejecutar este comando.")
+        return 1
+    for chat in chats:
+        print(f"TELEGRAM_CHAT_ID={chat['id']}    ({chat['type']}: {chat['name']})")
+    return 0
+
+
 def cmd_dashboard(args) -> int:
     import uvicorn
 
@@ -290,6 +307,7 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("stats")
     p.add_argument("--days", type=int, default=30)
     p.set_defaults(func=cmd_stats)
+    sub.add_parser("telegram-chat-id").set_defaults(func=cmd_telegram_chat_id)
     sub.add_parser("telegram-test").set_defaults(func=cmd_telegram_test)
     p = sub.add_parser("dashboard")
     p.add_argument("--host")

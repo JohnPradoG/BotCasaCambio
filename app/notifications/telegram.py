@@ -59,3 +59,20 @@ class ConsoleNotifier:
     def send(self, text: str) -> bool:
         logger.info("ALERTA (Telegram no configurado):\n%s", text)
         return True
+
+
+def find_chat_ids(token: str, session: requests.Session | None = None, timeout: float = 15) -> list[dict]:
+    """Chats que le escribieron al bot (getUpdates), para llenar TELEGRAM_CHAT_ID."""
+    session = session or requests.Session()
+    resp = session.get(f"https://api.telegram.org/bot{token}/getUpdates", timeout=timeout)
+    data = resp.json()
+    if not data.get("ok"):
+        raise RuntimeError(f"Telegram respondió: {data.get('description', resp.status_code)}")
+    chats: dict[int, dict] = {}
+    for update in data.get("result", []):
+        message = update.get("message") or update.get("channel_post") or update.get("my_chat_member") or {}
+        chat = message.get("chat") or {}
+        if "id" in chat:
+            name = chat.get("title") or " ".join(filter(None, [chat.get("first_name"), chat.get("last_name")]))
+            chats[chat["id"]] = {"id": chat["id"], "type": chat.get("type"), "name": name or chat.get("username")}
+    return list(chats.values())
