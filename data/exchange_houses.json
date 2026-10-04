@@ -1458,6 +1458,32 @@
           "notes": null
         }
       ]
+    },
+    {
+      "slug": "zacyc",
+      "name": "Zacyc",
+      "website": "https://zacyc.cl/",
+      "quotes_url": null,
+      "phone": "+56 2 2334 1362",
+      "whatsapp": null,
+      "source_url": "https://zacyc.cl/",
+      "scraper": null,
+      "notes": "Leído de zacyc.cl el 2026-10-04 (lectura automática, pendiente de verificación humana). Casa de cambio en Las Condes desde 2002; compra y venta de dólares, euros y otras divisas. La web no publica precios.",
+      "branches": [
+        {
+          "name": "Las Condes",
+          "address": "Av. Apoquindo 3307, Local 16, esq. San Crescente",
+          "comuna": "Las Condes",
+          "phone": "+56 2 2334 1362",
+          "whatsapp": null,
+          "opening_hours": "Lun-Vie 09:00-16:00 | Sáb-Dom cerrado",
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://zacyc.cl/",
+          "verified": false,
+          "notes": null
+        }
+      ]
     }
   ]
 }
