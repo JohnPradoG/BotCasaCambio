@@ -133,3 +133,24 @@ def test_masked_key_gives_clear_error(settings, tmp_path):
     s = _settings(settings, tmp_path, google_maps_api_key="AIzaSy\u2022\u2022\u2022")
     with pytest.raises(RuntimeError, match="caracteres inválidos"):
         discover(s, [], PlacesClient(s, session=_FakeApi([])))
+
+
+def test_loop_does_not_retry_maps_every_cycle(settings, tmp_path, monkeypatch):
+    import pytest
+
+    import app.main as main
+    from app.services import maps_discovery
+
+    calls = []
+
+    def failing(*_a, **_k):
+        calls.append(1)
+        raise RuntimeError("403")
+
+    monkeypatch.setattr(main, "get_settings", lambda: _settings(settings, tmp_path))
+    monkeypatch.setattr(maps_discovery, "discover", failing)
+    monkeypatch.setattr(main, "_last_maps_attempt", 0.0)
+    with pytest.raises(RuntimeError):
+        main._maybe_discover_maps(notifier=None)
+    main._maybe_discover_maps(notifier=None)  # siguiente ciclo: no reintenta todavía
+    assert calls == [1]

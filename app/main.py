@@ -260,6 +260,10 @@ def cmd_discover_maps(_args) -> int:
     return 0
 
 
+MAPS_RETRY_SECONDS = 6 * 3600
+_last_maps_attempt = 0.0
+
+
 def _maybe_discover_maps(notifier) -> None:
     """Repite la búsqueda en Google Maps cada MAPS_DISCOVERY_DAYS (si hay clave)."""
     from app.services.house_service import load_houses_file
@@ -271,6 +275,10 @@ def _maybe_discover_maps(notifier) -> None:
     path = Path(settings.maps_houses_path)
     if path.exists() and time.time() - path.stat().st_mtime < settings.maps_discovery_days * 86400:
         return
+    global _last_maps_attempt
+    if time.time() - _last_maps_attempt < MAPS_RETRY_SECONDS:
+        return  # un error (clave, permisos) no se reintenta en cada ciclo
+    _last_maps_attempt = time.time()
     existing = load_houses_file(settings.houses_file) if Path(settings.houses_file).exists() else []
     report = discover(settings, existing)
     notifier.send(summary_text(report))
