@@ -1020,13 +1020,13 @@
     {
       "slug": "e_panda",
       "name": "e-Panda",
-      "website": null,
+      "website": "https://epanda.cl/",
       "quotes_url": null,
       "phone": null,
       "whatsapp": null,
       "source_url": "https://portalcambio.cl/regiones/region-metropolitana-de-santiago/providencia-region-metropolitana-de-santiago/",
       "scraper": null,
-      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana). Facebook: facebook.com/epandaspa.",
+      "notes": "Leído el 2026-10-03 de directorios y sitios públicos (lectura automática, pendiente de verificación humana). Facebook: facebook.com/epandaspa. 2026-10-04: web epanda.cl (la indicó John); se carga con JavaScript, web_discovery la revisa con navegador.",
       "branches": [
         {
           "name": "Principal",
