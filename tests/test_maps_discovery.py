@@ -154,3 +154,60 @@ def test_loop_does_not_retry_maps_every_cycle(settings, tmp_path, monkeypatch):
         main._maybe_discover_maps(notifier=None)
     main._maybe_discover_maps(notifier=None)  # siguiente ciclo: no reintenta todavía
     assert calls == [1]
+
+
+class _FakeOverpass:
+    def __init__(self, data, status=200):
+        self.data, self.status, self.calls = data, status, []
+
+    def post(self, url, data=None, headers=None, timeout=None):
+        self.calls.append((url, data, headers))
+        resp = _Resp(self.data)
+        resp.status_code = self.status
+        return resp
+
+
+def test_without_key_uses_openstreetmap(settings, tmp_path):
+    s = _settings(settings, tmp_path, google_maps_api_key=None)
+    osm = _FakeOverpass({"elements": [
+        {"type": "node", "id": 1, "lat": -33.44, "lon": -70.65,
+         "tags": {"amenity": "bureau_de_change", "name": "Afex", "addr:street": "Agustinas", "addr:housenumber": "1050",
+                  "addr:city": "Santiago"}},
+        {"type": "way", "id": 2, "center": {"lat": -33.42, "lon": -70.61},
+         "tags": {"shop": "yes", "name": "Cambios Andes", "website": "https://cambiosandes.cl"}},
+        {"type": "node", "id": 3, "lat": -33.4, "lon": -70.6, "tags": {"amenity": "bureau_de_change"}},  # sin nombre
+        {"type": "node", "id": 4, "lat": -33.4, "lon": -70.6, "tags": {"shop": "car_repair", "name": "Cambio de Aceite"}},
+        {"type": "node", "id": 5, "lat": -33.4, "lon": -70.6, "tags": {"amenity": "bureau_de_change", "name": "Tour Money"}},
+    ]})
+    report = discover(s, [ExchangeHouse(slug="afex", name="AFEX")], osm_session=osm)
+    assert report.source == "OpenStreetMap" and report.requests == 1 and report.places == 4
+    query = osm.calls[0][1]["data"]
+    assert 'bureau_de_change' in query and "(-33.5,-70.7,-33.4,-70.6)" in query
+    assert osm.calls[0][2]["User-Agent"] == s.scraper_user_agent
+
+    houses = {h["slug"]: h for h in json.loads((tmp_path / "maps_houses.json").read_text())["exchange_houses"]}
+    assert set(houses) == {"cambios_andes", "tour_money"}  # AFEX ya registrada y sin web en OSM: nada que completar
+    branch = houses["cambios_andes"]["branches"][0]
+    assert branch["source_url"] == "https://www.openstreetmap.org/way/2" and branch["notes"] == "osm_id=way/2"
+    assert branch["latitude"] == -33.42 and houses["cambios_andes"]["website"] == "https://cambiosandes.cl"
+    assert houses["tour_money"]["website"] is None  # dato que el mapa no publica queda vacío
+    assert "OpenStreetMap" in houses["tour_money"]["notes"]
+
+
+def test_openstreetmap_error_is_reported(settings, tmp_path):
+    import pytest
+
+    s = _settings(settings, tmp_path, google_maps_api_key=None)
+    with pytest.raises(RuntimeError, match="Overpass"):
+        discover(s, [], osm_session=_FakeOverpass({"elements": [], "remark": "runtime error: timeout"}))
+    with pytest.raises(RuntimeError, match="429"):
+        discover(s, [], osm_session=_FakeOverpass({}, status=429))
+
+
+def test_osm_branch_keeps_comuna():
+    from app.services.osm_discovery import place_from_element
+
+    p = place_from_element({"type": "node", "id": 9, "lat": 1, "lon": 2,
+                            "tags": {"amenity": "bureau_de_change", "name": "Cambios X", "addr:city": "Providencia"}})
+    houses = group_places([p], [], MapsReport())
+    assert houses[0].branches[0].comuna == "Providencia"

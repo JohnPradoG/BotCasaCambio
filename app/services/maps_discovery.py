@@ -1,4 +1,9 @@
-"""Búsqueda de casas de cambio en Google Maps (API oficial Places, "Text Search").
+"""Búsqueda de casas de cambio en el mapa: OpenStreetMap (gratis) o Google Maps (Places API).
+
+Sin ``GOOGLE_MAPS_API_KEY`` se usa OpenStreetMap (ver ``osm_discovery``): una sola consulta
+a Overpass por locales etiquetados como casa de cambio o con "cambio"/"exchange" en el nombre.
+
+Con Google (API oficial Places, "Text Search"):
 
 Recorre Santiago en una cuadrícula: en cada celda pide "casa de cambio" restringido a
 ese rectángulo. Si una celda devuelve el máximo de resultados (60), se divide en cuatro
@@ -13,7 +18,7 @@ se le completa la web o el teléfono si faltaban. El resultado va a ``maps_house
 (no versionado); ``house_service.load_all_houses`` lo une al registro y desde ahí el
 descubrimiento web (``web_discovery``) revisa las webs nuevas en busca de precios.
 
-Requiere ``GOOGLE_MAPS_API_KEY`` con "Places API (New)" habilitada.
+Google requiere ``GOOGLE_MAPS_API_KEY`` con "Places API (New)" habilitada y facturación activa.
 """
 
 from __future__ import annotations
@@ -60,6 +65,13 @@ class Place:
     phone: str | None = None
     maps_url: str | None = None
     status: str | None = None
+    comuna: str | None = None
+    tagged_exchange: bool = False  # etiquetado como casa de cambio en el mapa (OSM amenity=bureau_de_change)
+    source: str = "Google Maps"
+
+    @property
+    def ref(self) -> str:
+        return f"osm_id={self.id}" if self.source == "OpenStreetMap" else f"google_place_id={self.id}"
 
     @classmethod
     def from_api(cls, p: dict) -> "Place":
@@ -74,6 +86,7 @@ class Place:
 
 @dataclass
 class MapsReport:
+    source: str = "Google Maps"
     requests: int = 0
     places: int = 0
     exchange_places: int = 0
@@ -106,7 +119,7 @@ def is_exchange(place: Place, known_names: set[str]) -> bool:
     name = _strip_accents(place.name)
     if _NOT_EXCHANGE.search(name):
         return False
-    return bool(_EXCHANGE_WORDS.search(name) or _EXCHANGE_WORDS.search(domain(place.website) or "")
+    return bool(place.tagged_exchange or _EXCHANGE_WORDS.search(name) or _EXCHANGE_WORDS.search(domain(place.website) or "")
                 or _slugify(brand_name(place.name)) in known_names)
 
 
@@ -238,14 +251,14 @@ def group_places(places: list[Place], existing: list[ExchangeHouse], report: Map
         if house is None:
             house = out[key] = ExchangeHouse(
                 slug=key, name=brand, website=p.website, phone=p.phone, source_url=p.maps_url,
-                notes="Encontrada en Google Maps (lectura automática, pendiente de verificación humana).",
+                notes=f"Encontrada en {p.source} (lectura automática, pendiente de verificación humana).",
             )
         house.website = house.website or p.website
         house.branches.append(Branch(
             name=p.name if p.name != brand else (p.address or p.name).split(",")[0],
-            address=p.address, comuna=comuna_from_address(p.address), phone=p.phone,
+            address=p.address, comuna=p.comuna or comuna_from_address(p.address), phone=p.phone,
             latitude=p.latitude, longitude=p.longitude, source_url=p.maps_url,
-            notes=f"google_place_id={p.id}",
+            notes=p.ref,
         ))
 
     report.new_houses = len(out)
@@ -255,31 +268,45 @@ def group_places(places: list[Place], existing: list[ExchangeHouse], report: Map
     return list(out.values()) + [e for e in enrich.values() if e.website or e.phone]
 
 
-def discover(settings: Settings, existing: list[ExchangeHouse], client: PlacesClient | None = None) -> MapsReport:
-    key = settings.google_maps_api_key or ""
-    if not key:
-        raise RuntimeError("Falta GOOGLE_MAPS_API_KEY en .env")
-    if not re.fullmatch(r"[A-Za-z0-9_\-]+", key):
-        raise RuntimeError("GOOGLE_MAPS_API_KEY tiene caracteres inválidos (¿se copió oculta, con •••?). "
-                           "Cópiala de nuevo desde Google Cloud → Credenciales → Mostrar clave.")
-    report = MapsReport()
-    places = collect_places(client or PlacesClient(settings), settings, report)
-    houses = group_places(list(places.values()), existing, report)
+def use_google(settings: Settings) -> bool:
+    provider = settings.maps_provider.strip().lower()
+    return provider == "google" or (provider == "auto" and bool(settings.google_maps_api_key))
+
+
+def discover(settings: Settings, existing: list[ExchangeHouse], client: PlacesClient | None = None,
+             osm_session: requests.Session | None = None) -> MapsReport:
+    if use_google(settings):
+        key = settings.google_maps_api_key or ""
+        if not key:
+            raise RuntimeError("Falta GOOGLE_MAPS_API_KEY en .env (o usa MAPS_PROVIDER=osm, gratis)")
+        if not re.fullmatch(r"[A-Za-z0-9_\-]+", key):
+            raise RuntimeError("GOOGLE_MAPS_API_KEY tiene caracteres inválidos (¿se copió oculta, con •••?). "
+                               "Cópiala de nuevo desde Google Cloud → Credenciales → Mostrar clave.")
+        report = MapsReport(source="Google Maps")
+        places = list(collect_places(client or PlacesClient(settings), settings, report).values())
+        detail = {"source": "Google Maps (Places API, Text Search)", "queries": settings.maps_queries}
+    else:
+        from app.services.osm_discovery import OVERPASS_QUERY_DOC, fetch_osm_places
+
+        report = MapsReport(source="OpenStreetMap")
+        places = fetch_osm_places(settings, osm_session)
+        report.requests, report.places = 1, len(places)
+        detail = {"source": "OpenStreetMap (Overpass API, © colaboradores de OpenStreetMap, ODbL)",
+                  "queries": OVERPASS_QUERY_DOC}
+    houses = group_places(places, existing, report)
     payload = {
-        "generated_at": datetime.now(timezone.utc).isoformat(),
-        "source": "Google Maps (Places API, Text Search)",
-        "queries": settings.maps_queries, "report": asdict(report),
+        "generated_at": datetime.now(timezone.utc).isoformat(), **detail, "report": asdict(report),
         "exchange_houses": [asdict(h) for h in houses],
     }
     path = Path(settings.maps_houses_path)
     path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
-    logger.info("Maps: %d lugares, %d casas de cambio, %d casas nuevas (%d con web) → %s",
-                report.places, report.exchange_places, report.new_houses, report.new_with_website, path)
+    logger.info("%s: %d lugares, %d casas de cambio, %d casas nuevas (%d con web) → %s",
+                report.source, report.places, report.exchange_places, report.new_houses, report.new_with_website, path)
     return report
 
 
 def summary_text(report: MapsReport) -> str:
-    text = (f"🗺️ Búsqueda en Google Maps: {report.exchange_places} locales de cambio encontrados.\n"
+    text = (f"🗺️ Búsqueda en {report.source}: {report.exchange_places} locales de cambio encontrados.\n"
             f"Casas nuevas: {report.new_houses} ({report.new_with_website} con web; el bot revisará "
             f"si publican precios).")
     if report.enriched:

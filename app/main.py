@@ -246,9 +246,6 @@ def cmd_discover_maps(_args) -> int:
     from app.services.maps_discovery import discover, summary_text
 
     settings = get_settings()
-    if not settings.google_maps_api_key:
-        print("Falta GOOGLE_MAPS_API_KEY en .env (ver README, sección Google Maps)")
-        return 1
     existing = load_houses_file(settings.houses_file) if Path(settings.houses_file).exists() else []
     try:
         report = discover(settings, existing)
@@ -256,7 +253,7 @@ def cmd_discover_maps(_args) -> int:
         print(exc)
         return 1
     print(summary_text(report))
-    print(f"{report.requests} consultas a la API · resultado en {settings.maps_houses_path}")
+    print(f"{report.requests} consultas a {report.source} · resultado en {settings.maps_houses_path}")
     return 0
 
 
@@ -265,12 +262,12 @@ _last_maps_attempt = 0.0
 
 
 def _maybe_discover_maps(notifier) -> None:
-    """Repite la búsqueda en Google Maps cada MAPS_DISCOVERY_DAYS (si hay clave)."""
+    """Repite la búsqueda de casas en el mapa cada MAPS_DISCOVERY_DAYS."""
     from app.services.house_service import load_houses_file
     from app.services.maps_discovery import discover, summary_text
 
     settings = get_settings()
-    if not settings.google_maps_api_key or not settings.maps_discovery_days:
+    if not settings.maps_discovery_days:
         return
     path = Path(settings.maps_houses_path)
     if path.exists() and time.time() - path.stat().st_mtime < settings.maps_discovery_days * 86400:
@@ -295,7 +292,7 @@ def cmd_loop(args) -> int:
         try:
             _maybe_discover_maps(make_notifier(get_settings()))
         except Exception:  # noqa: BLE001
-            logger.exception("Error buscando casas en Google Maps")
+            logger.exception("Error buscando casas en el mapa")
         try:
             _maybe_send_price_request(make_notifier(get_settings()))
         except Exception:  # noqa: BLE001
@@ -452,7 +449,7 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("price-requests", help="enlaces de WhatsApp para pedir precios a casas sin web")
     p.add_argument("--send", action="store_true", help="enviar también por Telegram")
     p.set_defaults(func=cmd_price_requests)
-    sub.add_parser("discover-maps", help="busca casas de cambio en Google Maps (GOOGLE_MAPS_API_KEY)").set_defaults(
+    sub.add_parser("discover-maps", help="busca casas de cambio en OpenStreetMap (o Google Maps con clave)").set_defaults(
         func=cmd_discover_maps)
     p = sub.add_parser("probe-all", help="revisa todas las webs de casas y deja data/probe/report.json")
     p.add_argument("--no-browser", action="store_true")
