@@ -180,6 +180,7 @@ escríbele al bot desde el chat configurado (los demás chats se ignoran):
 /precio Cambios Lyon euro 1085 -
 /top                              mejores rutas con lo guardado
 /casas                            nombres de casas registradas
+/lista                            planilla de casas con y sin precio, con teléfonos (también: python -m app.main export-houses --telegram)
 ```
 
 Cada precio queda en `data/manual_quotes.csv` con su hora (reemplaza el anterior de esa

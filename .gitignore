@@ -11,3 +11,4 @@ logs/*
 !logs/.gitkeep
 data/maps_houses.json
 data/discovery_state.json
+data/casas_para_llamar.csv

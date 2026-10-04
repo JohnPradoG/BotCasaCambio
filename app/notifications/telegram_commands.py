@@ -7,6 +7,7 @@ ignora. Comandos:
   o confirmado por teléfono y responde con la mejor ruta actual.
 * ``/top``: Top N con lo que hay guardado (sin consultar las casas).
 * ``/casas``: nombres que se pueden usar en ``/precio``.
+* ``/lista``: planilla con todas las casas, con y sin precio, y sus teléfonos.
 * ``/ayuda``.
 
 El bot nunca ejecuta operaciones: solo registra y calcula.
@@ -32,6 +33,7 @@ HELP = (
     "/precio <casa> <divisa> <compra> <venta>: guarda un precio (ej. /precio gamaex USD 970 990)\n"
     "/top: mejores rutas con los precios guardados\n"
     "/casas: nombres de casas para /precio\n"
+    "/lista: planilla de casas con y sin precio, con teléfonos para llamar\n"
     "El bot solo calcula y avisa; nunca compra ni vende."
 )
 
@@ -43,6 +45,7 @@ class CommandHandlers:
     known_houses: Callable[[], dict[str, str]]
     after_price: Callable[[], str]  # recalcula y devuelve un resumen corto
     top: Callable[[], str]
+    house_list: Callable[[], tuple[Path, str]] | None = None  # (archivo CSV, resumen)
 
 
 @dataclass
@@ -75,6 +78,17 @@ class TelegramCommandPoller:
                                                                   "text": text}, timeout=self.timeout)
         except requests.RequestException as exc:
             logger.warning("No se pudo responder por Telegram: %s", exc)
+
+    def _send_document(self, path: Path, caption: str) -> bool:
+        try:
+            with path.open("rb") as f:
+                resp = self.session.post(f"{self.base}/sendDocument", data={"chat_id": self.settings.telegram_chat_id,
+                                                                            "caption": caption[:1000]},
+                                         files={"document": f}, timeout=self.timeout * 4)
+            return resp.status_code == 200
+        except (OSError, requests.RequestException) as exc:
+            logger.warning("No se pudo enviar el archivo por Telegram: %s", exc)
+            return False
 
     def poll_once(self, wait_seconds: int = 0) -> int:
         """Lee mensajes nuevos y los procesa. Devuelve cuántos comandos atendió."""
@@ -130,6 +144,9 @@ class TelegramCommandPoller:
             if command == "/casas":
                 houses = self.handlers.known_houses()
                 return "Casas registradas:\n" + "\n".join(f"{slug} ({name})" for slug, name in sorted(houses.items()))
+            if command == "/lista" and self.handlers.house_list:
+                path, text = self.handlers.house_list()
+                return text if self._send_document(path, "Casas de cambio") else f"{text}\n⚠️ No se pudo enviar la planilla."
             if command in ("/ayuda", "/help", "/start"):
                 return HELP
             return f"No conozco ese comando.\n\n{HELP}"

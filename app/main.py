@@ -181,6 +181,38 @@ def _analysis_text(scrape_manual: bool, short: bool) -> str:
             f"Ganancia neta: {clp(best.net_profit_clp, True)} CLP. Usa /top para el detalle.")
 
 
+def _house_list() -> tuple[Path, str]:
+    from app.services.house_list import build_rows, price_status, summary, write_csv
+    from app.services.house_service import load_all_houses
+
+    settings = get_settings()
+    init_db()
+    with session_scope() as s:
+        sync_all_houses(s, settings)
+        status = price_status(s, settings.max_quote_usable_hours)
+    rows = build_rows(load_all_houses(settings), status, settings.timezone)
+    path = write_csv(rows, Path(settings.houses_file).with_name("casas_para_llamar.csv"))
+    return path, summary(rows)
+
+
+def cmd_export_houses(args) -> int:
+    path, text = _house_list()
+    print(text)
+    print(f"Planilla: {path}")
+    if args.telegram:
+        settings = get_settings()
+        if not settings.telegram_enabled:
+            print("Falta TELEGRAM_BOT_TOKEN o TELEGRAM_CHAT_ID en .env")
+            return 1
+        from app.notifications.telegram import TelegramNotifier
+
+        notifier = TelegramNotifier(settings.telegram_bot_token, settings.telegram_chat_id)
+        ok = notifier.send_document(path, text)
+        print("Enviada por Telegram" if ok else "No se pudo enviar por Telegram (ver logs)")
+        return 0 if ok else 1
+    return 0
+
+
 def make_command_poller():
     from app.notifications.telegram_commands import CommandHandlers, TelegramCommandPoller
 
@@ -191,6 +223,7 @@ def make_command_poller():
         known_houses=_known_houses,
         after_price=lambda: _analysis_text(scrape_manual=True, short=True),
         top=lambda: _analysis_text(scrape_manual=True, short=False),
+        house_list=_house_list,
     )
     return TelegramCommandPoller(settings, handlers)
 
@@ -446,6 +479,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.set_defaults(func=cmd_quotes)
     sub.add_parser("houses").set_defaults(func=cmd_houses)
     sub.add_parser("scrapers").set_defaults(func=cmd_scrapers)
+    p = sub.add_parser("export-houses", help="planilla de casas con y sin precio, con teléfonos (data/casas_para_llamar.csv)")
+    p.add_argument("--telegram", action="store_true", help="enviarla también por Telegram")
+    p.set_defaults(func=cmd_export_houses)
     p = sub.add_parser("price-requests", help="enlaces de WhatsApp para pedir precios a casas sin web")
     p.add_argument("--send", action="store_true", help="enviar también por Telegram")
     p.set_defaults(func=cmd_price_requests)
