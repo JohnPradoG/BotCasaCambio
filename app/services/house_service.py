@@ -9,6 +9,7 @@ from datetime import timedelta
 from pathlib import Path
 
 from sqlalchemy import func, select
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.database.models import BranchRow, ExchangeHouseRow, QuoteRow
@@ -66,15 +67,29 @@ def upsert_house(session: Session, house: ExchangeHouse) -> ExchangeHouseRow:
         for key, value in fields.items():
             setattr(row, key, value)
     existing = {b.name: b for b in row.branches}
+    seen: set[str] = set()
     for branch in house.branches:
         values = asdict(branch)
-        if branch.name in existing:
+        values["name"] = unique_name(branch.name, seen)  # dos sucursales con el mismo nombre no chocan
+        seen.add(values["name"])
+        if values["name"] in existing:
             for key, value in values.items():
-                setattr(existing[branch.name], key, value)
+                setattr(existing[values["name"]], key, value)
         else:
-            row.branches.append(BranchRow(**values))
+            existing[values["name"]] = BranchRow(**values)
+            row.branches.append(existing[values["name"]])
     session.flush()
     return row
+
+
+def unique_name(name: str, taken: set[str]) -> str:
+    """"Centro" → "Centro (2)" si ya hay otra sucursal "Centro" en la misma casa."""
+    if name not in taken:
+        return name
+    n = 2
+    while f"{name} ({n})" in taken:
+        n += 1
+    return f"{name} ({n})"
 
 
 def sync_houses(session: Session, path: str | Path) -> int:
@@ -86,9 +101,14 @@ def sync_houses(session: Session, path: str | Path) -> int:
 
 
 def sync_all_houses(session: Session, settings) -> int:
+    """Registro + casas del mapa. Una casa con datos que no se pueden guardar se salta (queda en el log)."""
     houses = load_all_houses(settings)
     for house in houses:
-        upsert_house(session, house)
+        try:
+            with session.begin_nested():
+                upsert_house(session, house)
+        except SQLAlchemyError as exc:
+            logger.error("No se pudo registrar la casa %s: %s", house.slug, exc)
     return len(houses)
 
 

@@ -36,6 +36,7 @@ import requests
 from app.config.settings import Settings
 from app.models.currency import _strip_accents
 from app.models.exchange_house import Branch, ExchangeHouse
+from app.services.house_service import unique_name
 
 logger = logging.getLogger(__name__)
 
@@ -254,8 +255,9 @@ def group_places(places: list[Place], existing: list[ExchangeHouse], report: Map
                 notes=f"Encontrada en {p.source} (lectura automática, pendiente de verificación humana).",
             )
         house.website = house.website or p.website
+        branch_name = p.name if p.name != brand else (p.address or p.name).split(",")[0]
         house.branches.append(Branch(
-            name=p.name if p.name != brand else (p.address or p.name).split(",")[0],
+            name=unique_name(branch_name, {b.name for b in house.branches}),
             address=p.address, comuna=p.comuna or comuna_from_address(p.address), phone=p.phone,
             latitude=p.latitude, longitude=p.longitude, source_url=p.maps_url,
             notes=p.ref,
