@@ -110,7 +110,7 @@ class Settings(BaseSettings):
     maps_bbox: str = "-33.65,-70.85,-33.30,-70.45"
     maps_cell_degrees: float = Field(0.05, gt=0)
     maps_max_requests: int = Field(300, ge=1)  # tope de consultas por búsqueda (costo de la API)
-    maps_discovery_days: float = Field(7, ge=0)  # cada cuántos días repetir la búsqueda en el loop (0 = nunca)
+    maps_discovery_days: float = Field(30, ge=0)  # cada cuántos días buscar casas nuevas en el loop (0 = nunca)
     # Pedido diario de precios (enlaces de WhatsApp por Telegram) a casas sin precio reciente.
     price_request_time: str | None = None  # hora local, p. ej. "09:30"; vacío = no enviar
     price_request_currencies: str = "USD,EUR,BRL,ARS,PEN"
