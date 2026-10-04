@@ -256,8 +256,12 @@ def group_places(places: list[Place], existing: list[ExchangeHouse], report: Map
 
 
 def discover(settings: Settings, existing: list[ExchangeHouse], client: PlacesClient | None = None) -> MapsReport:
-    if not settings.google_maps_api_key:
+    key = settings.google_maps_api_key or ""
+    if not key:
         raise RuntimeError("Falta GOOGLE_MAPS_API_KEY en .env")
+    if not re.fullmatch(r"[A-Za-z0-9_\-]+", key):
+        raise RuntimeError("GOOGLE_MAPS_API_KEY tiene caracteres inválidos (¿se copió oculta, con •••?). "
+                           "Cópiala de nuevo desde Google Cloud → Credenciales → Mostrar clave.")
     report = MapsReport()
     places = collect_places(client or PlacesClient(settings), settings, report)
     houses = group_places(list(places.values()), existing, report)

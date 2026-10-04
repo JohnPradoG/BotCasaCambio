@@ -125,3 +125,11 @@ def test_web_discovery_skips_social_links(settings, tmp_path):
 
 def test_default_queries_search_like_google_maps(settings):
     assert settings.maps_queries.split(";")[0] == "casas de cambio"
+
+
+def test_masked_key_gives_clear_error(settings, tmp_path):
+    import pytest
+
+    s = _settings(settings, tmp_path, google_maps_api_key="AIzaSy\u2022\u2022\u2022")
+    with pytest.raises(RuntimeError, match="caracteres inválidos"):
+        discover(s, [], PlacesClient(s, session=_FakeApi([])))
