@@ -23,6 +23,39 @@ def load_houses_file(path: str | Path) -> list[ExchangeHouse]:
     return [ExchangeHouse.from_dict(item) for item in data.get("exchange_houses", [])]
 
 
+def merge_houses(base: list[ExchangeHouse], extra: list[ExchangeHouse]) -> list[ExchangeHouse]:
+    """Une el registro con casas de otra fuente (Google Maps).
+
+    Si la casa ya existe, solo se completan web/teléfono faltantes y se agregan sucursales
+    nuevas; nunca se pisa un dato del registro.
+    """
+    by_slug = {h.slug: h for h in base}
+    merged = list(base)
+    for house in extra:
+        current = by_slug.get(house.slug)
+        if current is None:
+            merged.append(house)
+            by_slug[house.slug] = house
+            continue
+        current.website = current.website or house.website
+        current.phone = current.phone or house.phone
+        names = {b.name for b in current.branches}
+        current.branches += [b for b in house.branches if b.name not in names]
+    return merged
+
+
+def load_all_houses(settings) -> list[ExchangeHouse]:
+    """Registro (``HOUSES_FILE``) + casas encontradas en Google Maps (``maps_houses.json``)."""
+    base = load_houses_file(settings.houses_file) if Path(settings.houses_file).exists() else []
+    maps = Path(settings.maps_houses_path)
+    if maps.exists():
+        try:
+            base = merge_houses(base, load_houses_file(maps))
+        except (ValueError, TypeError) as exc:
+            logger.warning("No se pudo leer %s: %s", maps, exc)
+    return base
+
+
 def upsert_house(session: Session, house: ExchangeHouse) -> ExchangeHouseRow:
     row = session.scalar(select(ExchangeHouseRow).where(ExchangeHouseRow.slug == house.slug))
     fields = {k: v for k, v in asdict(house).items() if k != "branches"}
@@ -49,6 +82,13 @@ def sync_houses(session: Session, path: str | Path) -> int:
     for house in houses:
         upsert_house(session, house)
     logger.info("%d casas registradas desde %s", len(houses), path)
+    return len(houses)
+
+
+def sync_all_houses(session: Session, settings) -> int:
+    houses = load_all_houses(settings)
+    for house in houses:
+        upsert_house(session, house)
     return len(houses)
 
 

@@ -103,6 +103,14 @@ class Settings(BaseSettings):
     # Descubrimiento automático: webs de casas sin scraper. Reintento de las que no tenían precios.
     discovery_retry_hours: float = Field(24, ge=0)
     discovery_use_browser: bool = True
+    # Búsqueda de casas en Google Maps (Places API). Sin clave no se busca.
+    google_maps_api_key: str | None = None
+    maps_queries: str = "casas de cambio;casa de cambio"  # como se escribe en Google Maps; varias con ";"
+    # Rectángulo lat_min,lon_min,lat_max,lon_max (Gran Santiago) y tamaño de celda en grados.
+    maps_bbox: str = "-33.65,-70.85,-33.30,-70.45"
+    maps_cell_degrees: float = Field(0.05, gt=0)
+    maps_max_requests: int = Field(300, ge=1)  # tope de consultas por búsqueda (costo de la API)
+    maps_discovery_days: float = Field(7, ge=0)  # cada cuántos días repetir la búsqueda en el loop (0 = nunca)
     # Pedido diario de precios (enlaces de WhatsApp por Telegram) a casas sin precio reciente.
     price_request_time: str | None = None  # hora local, p. ej. "09:30"; vacío = no enviar
     price_request_currencies: str = "USD,EUR,BRL,ARS,PEN"
@@ -112,11 +120,17 @@ class Settings(BaseSettings):
     scraper_user_agent: str = "BotCasaCambio/0.1 (+deteccion de arbitraje; contacto en README)"
     respect_robots_txt: bool = True
     houses_file: str = str(DATA_DIR / "exchange_houses.json")
+    # Casas encontradas en Google Maps (generado por `discover-maps`; vacío = junto a HOUSES_FILE).
+    maps_houses_file: str = ""
     manual_quotes_file: str = str(DATA_DIR / "manual_quotes.csv")
 
     @property
     def enabled_scraper_list(self) -> list[str]:
         return [s.strip() for s in self.enabled_scrapers.split(",") if s.strip()]
+
+    @property
+    def maps_houses_path(self) -> str:
+        return self.maps_houses_file or str(Path(self.houses_file).with_name("maps_houses.json"))
 
     @property
     def telegram_enabled(self) -> bool:

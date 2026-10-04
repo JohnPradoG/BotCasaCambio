@@ -38,7 +38,7 @@ from app.logging_config import setup_logging
 from app.models.opportunity import OpportunityStatus
 from app.scrapers.registry import available_scrapers, get_scrapers
 from app.services.cycle_service import make_notifier, run_cycle
-from app.services.house_service import house_stats, sync_houses
+from app.services.house_service import house_stats, sync_all_houses
 from app.services.quote_service import collect_quotes, latest_quotes
 from app.services.report import clp, format_top
 
@@ -57,8 +57,7 @@ def cmd_init_db(_args) -> int:
     settings = get_settings()
     init_db()
     with session_scope() as s:
-        if Path(settings.houses_file).exists():
-            sync_houses(s, settings.houses_file)
+        sync_all_houses(s, settings)
     print("Base de datos lista.")
     return 0
 
@@ -68,8 +67,7 @@ def cmd_scrape(args) -> int:
     init_db()
     slugs = args.only or settings.enabled_scraper_list
     with session_scope() as s:
-        if Path(settings.houses_file).exists():
-            sync_houses(s, settings.houses_file)
+        sync_all_houses(s, settings)
         report = collect_quotes(s, get_scrapers(slugs))
     for r in report.results:
         print(f"{r.scraper:15s} {r.status.value:18s} cotizaciones={len(r.quotes)} {r.error or ''}")
@@ -162,8 +160,7 @@ def _known_houses() -> dict[str, str]:
     init_db()
     with session_scope() as s:
         settings = get_settings()
-        if Path(settings.houses_file).exists():
-            sync_houses(s, settings.houses_file)
+        sync_all_houses(s, settings)
         return {h.slug: h.name for h in s.query(ExchangeHouseRow).all()}
 
 
@@ -199,7 +196,7 @@ def make_command_poller():
 
 
 def _price_request_text() -> str | None:
-    from app.services.house_service import load_houses_file
+    from app.services.house_service import load_all_houses
     from app.services.opportunity_service import quotes_for_engine
     from app.services.price_requests import build_price_request
 
@@ -207,7 +204,7 @@ def _price_request_text() -> str | None:
     init_db()
     with session_scope() as s:
         fresh = {q.exchange_house for q in quotes_for_engine(s, settings.max_quote_usable_hours * 60)}
-    houses = load_houses_file(settings.houses_file) if Path(settings.houses_file).exists() else []
+    houses = load_all_houses(settings)
     return build_price_request(houses, fresh, settings)
 
 
@@ -244,6 +241,37 @@ def cmd_price_requests(args) -> int:
     return 0
 
 
+def cmd_discover_maps(_args) -> int:
+    from app.services.house_service import load_houses_file
+    from app.services.maps_discovery import discover, summary_text
+
+    settings = get_settings()
+    if not settings.google_maps_api_key:
+        print("Falta GOOGLE_MAPS_API_KEY en .env (ver README, sección Google Maps)")
+        return 1
+    existing = load_houses_file(settings.houses_file) if Path(settings.houses_file).exists() else []
+    report = discover(settings, existing)
+    print(summary_text(report))
+    print(f"{report.requests} consultas a la API · resultado en {settings.maps_houses_path}")
+    return 0
+
+
+def _maybe_discover_maps(notifier) -> None:
+    """Repite la búsqueda en Google Maps cada MAPS_DISCOVERY_DAYS (si hay clave)."""
+    from app.services.house_service import load_houses_file
+    from app.services.maps_discovery import discover, summary_text
+
+    settings = get_settings()
+    if not settings.google_maps_api_key or not settings.maps_discovery_days:
+        return
+    path = Path(settings.maps_houses_path)
+    if path.exists() and time.time() - path.stat().st_mtime < settings.maps_discovery_days * 86400:
+        return
+    existing = load_houses_file(settings.houses_file) if Path(settings.houses_file).exists() else []
+    report = discover(settings, existing)
+    notifier.send(summary_text(report))
+
+
 def cmd_loop(args) -> int:
     interval = args.interval or get_settings().loop_interval_seconds
     poller = make_command_poller()  # con Telegram configurado, atiende /precio mientras espera
@@ -252,6 +280,10 @@ def cmd_loop(args) -> int:
             _cycle(argparse.Namespace(), scrape=True, save=True, alert=True)
         except Exception:  # noqa: BLE001 - el bucle no debe morir
             logger.exception("Error en el ciclo")
+        try:
+            _maybe_discover_maps(make_notifier(get_settings()))
+        except Exception:  # noqa: BLE001
+            logger.exception("Error buscando casas en Google Maps")
         try:
             _maybe_send_price_request(make_notifier(get_settings()))
         except Exception:  # noqa: BLE001
@@ -408,6 +440,8 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("price-requests", help="enlaces de WhatsApp para pedir precios a casas sin web")
     p.add_argument("--send", action="store_true", help="enviar también por Telegram")
     p.set_defaults(func=cmd_price_requests)
+    sub.add_parser("discover-maps", help="busca casas de cambio en Google Maps (GOOGLE_MAPS_API_KEY)").set_defaults(
+        func=cmd_discover_maps)
     p = sub.add_parser("probe-all", help="revisa todas las webs de casas y deja data/probe/report.json")
     p.add_argument("--no-browser", action="store_true")
     p.set_defaults(func=cmd_probe_all)

@@ -6,7 +6,6 @@ import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
-from pathlib import Path
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -18,7 +17,7 @@ from app.notifications.messages import format_alert, format_drop_alert
 from app.notifications.telegram import ConsoleNotifier, TelegramNotifier
 from app.scrapers.registry import get_scrapers
 from app.services.arbitrage_engine import Route, SearchStats, find_best_routes, reprice_route
-from app.services.house_service import house_directory, sync_houses
+from app.services.house_service import house_directory, sync_all_houses
 from app.services.opportunity_service import quotes_for_engine, save_routes
 from app.services.quote_service import collect_quotes
 from app.services.verification_service import expire_old
@@ -119,8 +118,7 @@ def run_cycle(session: Session, settings: Settings, scrape: bool = True, notifie
               capital: float | None = None, top_n: int | None = None, max_steps: int | None = None,
               save: bool = True, alert: bool = True) -> CycleResult:
     result = CycleResult()
-    if Path(settings.houses_file).exists():
-        sync_houses(session, settings.houses_file)
+    sync_all_houses(session, settings)
     if scrape:
         collect_quotes(session, get_scrapers(settings.enabled_scraper_list, settings=settings), settings)
 

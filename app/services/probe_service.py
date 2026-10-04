@@ -18,9 +18,10 @@ from pathlib import Path
 
 from app.config.settings import Settings
 from app.scrapers.base import BaseScraper
+from app.scrapers.exchanges.web_discovery import is_social
 from app.scrapers.extractors import RawRate, extract_rates
 from app.scrapers.registry import available_scrapers
-from app.services.house_service import load_houses_file
+from app.services.house_service import load_all_houses
 
 
 class _Fetcher(BaseScraper):
@@ -89,13 +90,12 @@ def probe_all(settings: Settings, out_dir: Path, use_browser: bool) -> dict:
             "published": sorted({q.timestamp_source.isoformat() for q in run.quotes if q.timestamp_source}),
         }
 
-    if Path(settings.houses_file).exists():
-        for house in load_houses_file(settings.houses_file):
-            if house.scraper or not house.website:
-                continue
-            site_dir = out_dir / house.slug
-            site_dir.mkdir(parents=True, exist_ok=True)
-            report["websites"][house.slug] = probe_site(house.website, settings, use_browser, save_dir=site_dir)
+    for house in load_all_houses(settings):
+        if house.scraper or not house.website or is_social(house.website):
+            continue
+        site_dir = out_dir / house.slug
+        site_dir.mkdir(parents=True, exist_ok=True)
+        report["websites"][house.slug] = probe_site(house.website, settings, use_browser, save_dir=site_dir)
 
     (out_dir / "report.json").write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
     return report
