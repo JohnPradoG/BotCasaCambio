@@ -200,15 +200,22 @@ Compra = lo que la casa te paga por 1 unidad; venta = lo que te cobra.
 Convención compra/venta: `buy_rate` = la casa **compra** la divisa (se usa para X → CLP);
 `sell_rate` = la casa **vende** la divisa (se usa para CLP → X).
 
-## Buscar casas en Google Maps
+## Buscar casas en el mapa (OpenStreetMap o Google Maps)
 
-El bot puede recorrer el mapa de Santiago y encontrar todas las casas de cambio que
-aparecen en Google Maps buscando "casas de cambio", celda por celda (las zonas densas,
-como el centro, se dividen en celdas más chicas). Guarda nombre, dirección, coordenadas,
-teléfono y web de cada local en `data/maps_houses.json`. Las casas nuevas con web pasan
-al descubrimiento automático (`web_discovery`), que busca si publican precios.
+El bot busca en el mapa de Santiago las casas de cambio que no tiene registradas y guarda
+nombre, dirección, coordenadas, teléfono y web de cada local en `data/maps_houses.json`.
+Las casas nuevas con web pasan al descubrimiento automático (`web_discovery`), que busca si
+publican precios. Ejecutar a mano: `python -m app.main discover-maps`.
 
-Usa la API oficial (Places API), no lee la página de Google Maps:
+**Por defecto usa OpenStreetMap**, gratis y sin clave: una consulta a la API pública
+Overpass por locales etiquetados como casa de cambio (`amenity=bureau_de_change`) o con
+"cambio"/"exchange"/"divisa" en el nombre (datos © colaboradores de OpenStreetMap, ODbL).
+Tiene menos locales registrados que Google Maps.
+
+**Google Maps (opcional, requiere facturación en Google Cloud).** Con `GOOGLE_MAPS_API_KEY`
+puesta (o `MAPS_PROVIDER=google`) busca "casas de cambio" celda por celda (las zonas densas,
+como el centro, se dividen en celdas más chicas). Usa la API oficial (Places API), no lee
+la página de Google Maps:
 
 1. En https://console.cloud.google.com crea un proyecto y activa la facturación
    (Google da un cupo gratis mensual; una búsqueda mensual usa del orden de 100-300 consultas).
@@ -216,7 +223,7 @@ Usa la API oficial (Places API), no lee la página de Google Maps:
 3. En "Credenciales" crea una **clave de API** y restríngela a Places API.
 4. Ponla en `.env` como `GOOGLE_MAPS_API_KEY=...` y ejecuta `python -m app.main discover-maps`.
 
-Con la clave puesta, el loop busca casas nuevas una vez al mes (`MAPS_DISCOVERY_DAYS=30`) y avisa por
+El loop busca casas nuevas una vez al mes (`MAPS_DISCOVERY_DAYS=30`) y avisa por
 Telegram cuántas casas encontró. `MAPS_MAX_REQUESTS` limita las consultas por búsqueda.
 
 ## Cómo agregar una casa de cambio

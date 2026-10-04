@@ -103,7 +103,9 @@ class Settings(BaseSettings):
     # Descubrimiento automático: webs de casas sin scraper. Reintento de las que no tenían precios.
     discovery_retry_hours: float = Field(24, ge=0)
     discovery_use_browser: bool = True
-    # Búsqueda de casas en Google Maps (Places API). Sin clave no se busca.
+    # Búsqueda de casas en el mapa: "auto" = Google Maps si hay clave, si no OpenStreetMap (gratis).
+    maps_provider: str = "auto"  # auto | osm | google
+    osm_overpass_url: str = "https://overpass-api.de/api/interpreter"
     google_maps_api_key: str | None = None
     maps_queries: str = "casas de cambio;casa de cambio"  # como se escribe en Google Maps; varias con ";"
     # Rectángulo lat_min,lon_min,lat_max,lon_max (Gran Santiago) y tamaño de celda en grados.
