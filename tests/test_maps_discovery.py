@@ -211,3 +211,27 @@ def test_osm_branch_keeps_comuna():
                             "tags": {"amenity": "bureau_de_change", "name": "Cambios X", "addr:city": "Providencia"}})
     houses = group_places([p], [], MapsReport())
     assert houses[0].branches[0].comuna == "Providencia"
+
+
+def test_duplicate_branch_names_do_not_break_sync(settings, tmp_path, session):
+    """Dos locales del mapa con el mismo nombre y sin dirección rompían el ciclo con IntegrityError."""
+    from app.database.models import BranchRow
+    from app.services.house_service import sync_all_houses
+
+    (tmp_path / "houses.json").write_text(json.dumps({"exchange_houses": []}), encoding="utf-8")
+    # Archivo ya generado por una versión anterior: nombres repetidos dentro de la misma casa.
+    (tmp_path / "maps_houses.json").write_text(json.dumps({"exchange_houses": [
+        {"slug": "cambios_x", "name": "Cambios X", "branches": [
+            {"name": "Cambios X", "source_url": "https://www.openstreetmap.org/node/1"},
+            {"name": "Cambios X", "source_url": "https://www.openstreetmap.org/node/2"}]}]}), encoding="utf-8")
+    assert sync_all_houses(session, settings) == 1
+    assert sync_all_houses(session, settings) == 1  # segunda vez: actualiza, no duplica
+    names = sorted(b.name for b in session.query(BranchRow).all())
+    assert names == ["Cambios X", "Cambios X (2)"]
+
+    from app.services.osm_discovery import place_from_element
+
+    els = [{"type": "node", "id": i, "lat": 1, "lon": 2, "tags": {"amenity": "bureau_de_change", "name": "Cambios Y"}}
+           for i in (1, 2)]
+    houses = group_places([place_from_element(e) for e in els], [], MapsReport())
+    assert [b.name for b in houses[0].branches] == ["Cambios Y", "Cambios Y (2)"]
