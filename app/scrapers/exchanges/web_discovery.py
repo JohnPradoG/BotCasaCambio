@@ -29,10 +29,18 @@ from app.models.quote import NormalizedQuote, QuoteFlag
 from app.scrapers.base import BaseScraper
 from app.scrapers.extractors import RawRate, extract_rates
 from app.scrapers.registry import register
-from app.services.house_service import load_houses_file
+from app.services.house_service import load_all_houses
 
 _PRICE_WORDS = ("precio", "cotiza", "valores", "divisa", "tasa", "moneda")
 MAX_SUBPAGES = 3
+# Redes sociales y enlaces de contacto: no son webs de precios (y suelen prohibir robots).
+_SOCIAL = ("instagram.com", "facebook.com", "fb.com", "wa.me", "whatsapp.com", "linktr.ee", "tiktok.com",
+           "twitter.com", "x.com", "linkedin.com", "youtube.com", "google.com", "goo.gl", "business.site")
+
+
+def is_social(url: str) -> bool:
+    host = urlsplit(url if "://" in url else f"https://{url}").netloc.lower().removeprefix("www.")
+    return any(host == d or host.endswith("." + d) for d in _SOCIAL)
 
 
 def price_links(html: str, base_url: str, limit: int = MAX_SUBPAGES) -> list[str]:
@@ -75,9 +83,8 @@ class WebDiscoveryScraper(BaseScraper):
             self.log.warning("No se pudo guardar %s: %s", self.state_file, exc)
 
     def candidates(self) -> list:
-        if not Path(self.settings.houses_file).exists():
-            return []
-        return [h for h in load_houses_file(self.settings.houses_file) if h.website and not h.scraper]
+        return [h for h in load_all_houses(self.settings)
+                if h.website and not h.scraper and not is_social(h.website)]
 
     def find_rates(self, url: str) -> tuple[list[RawRate], str]:
         """Devuelve (tasas, url donde se encontraron)."""

@@ -200,6 +200,25 @@ Compra = lo que la casa te paga por 1 unidad; venta = lo que te cobra.
 Convención compra/venta: `buy_rate` = la casa **compra** la divisa (se usa para X → CLP);
 `sell_rate` = la casa **vende** la divisa (se usa para CLP → X).
 
+## Buscar casas en Google Maps
+
+El bot puede recorrer el mapa de Santiago y encontrar todas las casas de cambio que
+aparecen en Google Maps buscando "casas de cambio", celda por celda (las zonas densas,
+como el centro, se dividen en celdas más chicas). Guarda nombre, dirección, coordenadas,
+teléfono y web de cada local en `data/maps_houses.json`. Las casas nuevas con web pasan
+al descubrimiento automático (`web_discovery`), que busca si publican precios.
+
+Usa la API oficial (Places API), no lee la página de Google Maps:
+
+1. En https://console.cloud.google.com crea un proyecto y activa la facturación
+   (Google da un cupo gratis mensual; una búsqueda semanal usa del orden de 100-300 consultas).
+2. En "APIs y servicios" → "Biblioteca" habilita **Places API (New)**.
+3. En "Credenciales" crea una **clave de API** y restríngela a Places API.
+4. Ponla en `.env` como `GOOGLE_MAPS_API_KEY=...` y ejecuta `python -m app.main discover-maps`.
+
+Con la clave puesta, el loop repite la búsqueda cada `MAPS_DISCOVERY_DAYS` y avisa por
+Telegram cuántas casas encontró. `MAPS_MAX_REQUESTS` limita las consultas por búsqueda.
+
 ## Cómo agregar una casa de cambio
 
 1. **Registrar la casa** en `data/exchange_houses.json` (solo datos públicos, con
