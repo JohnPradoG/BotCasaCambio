@@ -53,6 +53,21 @@ class TelegramNotifier:
         return ok
 
 
+    def send_document(self, path, caption: str = "") -> bool:
+        try:
+            with open(path, "rb") as f:
+                resp = self.session.post(f"https://api.telegram.org/bot{self.token}/sendDocument",
+                                         data={"chat_id": self.chat_id, "caption": caption[:1000]},
+                                         files={"document": f}, timeout=self.timeout * 4)
+        except (OSError, requests.RequestException) as exc:
+            logger.error("No se pudo enviar el archivo a Telegram: %s", exc)
+            return False
+        if resp.status_code != 200:
+            logger.error("Telegram respondió %s: %s", resp.status_code, resp.text[:300])
+            return False
+        return True
+
+
 class ConsoleNotifier:
     """Se usa cuando Telegram no está configurado: escribe la alerta en el log."""
 
