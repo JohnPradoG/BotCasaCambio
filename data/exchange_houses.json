@@ -1432,6 +1432,32 @@
           "notes": null
         }
       ]
+    },
+    {
+      "slug": "cambix",
+      "name": "Cambix Chile",
+      "website": "https://cambixchile.cl/",
+      "quotes_url": "https://cambixchile.cl/",
+      "phone": null,
+      "whatsapp": null,
+      "source_url": "https://cambixchile.cl/",
+      "scraper": null,
+      "notes": "Leído de cambixchile.cl el 2026-10-04 (lectura automática, pendiente de verificación humana). Publica Compra/Venta de dólar, euro, real y peso argentino ('Arg') sin hora; dice que los valores pueden variar y pide contactarlos para el tipo de cambio actualizado. Sin teléfono publicado en la web; Instagram: https://www.instagram.com/cambixchile.cl/. Precios vía web_discovery.",
+      "branches": [
+        {
+          "name": "Vitacura",
+          "address": "Candelaria Goyenechea 3820, Local 66",
+          "comuna": "Vitacura",
+          "phone": null,
+          "whatsapp": null,
+          "opening_hours": "Publicado: 10:00 - 17:00 (sin días)",
+          "latitude": null,
+          "longitude": null,
+          "source_url": "https://cambixchile.cl/",
+          "verified": false,
+          "notes": null
+        }
+      ]
     }
   ]
 }
