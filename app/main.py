@@ -250,7 +250,11 @@ def cmd_discover_maps(_args) -> int:
         print("Falta GOOGLE_MAPS_API_KEY en .env (ver README, sección Google Maps)")
         return 1
     existing = load_houses_file(settings.houses_file) if Path(settings.houses_file).exists() else []
-    report = discover(settings, existing)
+    try:
+        report = discover(settings, existing)
+    except RuntimeError as exc:
+        print(exc)
+        return 1
     print(summary_text(report))
     print(f"{report.requests} consultas a la API · resultado en {settings.maps_houses_path}")
     return 0
