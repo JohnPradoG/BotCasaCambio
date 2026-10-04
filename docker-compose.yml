@@ -1,0 +1,19 @@
+services:
+  bot:
+    build: .
+    env_file: .env
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    restart: unless-stopped
+
+  dashboard:
+    build: .
+    env_file: .env
+    command: ["python", "-m", "app.main", "dashboard", "--host", "0.0.0.0"]
+    ports:
+      - "127.0.0.1:8000:8000"  # solo local; ver README para exponerlo con token
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    restart: unless-stopped

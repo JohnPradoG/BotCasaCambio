@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BotCasaCambio</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+  :root { --bg:#f7f7f5; --fg:#1d1d1b; --muted:#6b6b66; --card:#fff; --line:#e3e3de; --accent:#1f6f50; --warn:#a15c00; --bad:#a3262a; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#161615; --fg:#ececea; --muted:#9a9a94; --card:#20201e; --line:#33332f; --accent:#4cc38a; --warn:#e3a33b; --bad:#ef6b6f; } }
+  * { box-sizing:border-box; }
+  body { margin:0; font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--fg); }
+  header { padding:16px; border-bottom:1px solid var(--line); display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
+  header h1 { font-size:18px; margin:0 12px 0 0; }
+  nav button { background:none; border:1px solid var(--line); color:var(--fg); padding:6px 12px; border-radius:6px; cursor:pointer; }
+  nav button.active { border-color:var(--accent); color:var(--accent); }
+  main { padding:16px; max-width:1200px; margin:0 auto; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:14px; margin-bottom:12px; }
+  .row { display:flex; flex-wrap:wrap; gap:16px; align-items:baseline; }
+  .profit { font-size:22px; font-weight:600; color:var(--accent); }
+  .muted { color:var(--muted); }
+  .tag { display:inline-block; font-size:12px; border:1px solid var(--line); border-radius:4px; padding:0 6px; margin:2px 4px 2px 0; }
+  .tag.warn { color:var(--warn); border-color:var(--warn); }
+  .HIGH { color:var(--accent); } .MEDIUM { color:var(--warn); } .LOW { color:var(--bad); }
+  table { width:100%; border-collapse:collapse; }
+  th, td { text-align:left; padding:6px 8px; border-bottom:1px solid var(--line); white-space:nowrap; }
+  td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; }
+  .scroll { overflow-x:auto; }
+  label { margin-right:8px; }
+  input, select { background:var(--card); color:var(--fg); border:1px solid var(--line); border-radius:4px; padding:4px 6px; }
+  #map { height:420px; border-radius:8px; }
+  pre { white-space:pre-wrap; margin:0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>BotCasaCambio</h1>
+  <nav>
+    <button data-tab="top" class="active">Top</button>
+    <button data-tab="opps">Oportunidades</button>
+    <button data-tab="quotes">Cotizaciones</button>
+    <button data-tab="houses">Casas</button>
+    <button data-tab="stats">Estadísticas</button>
+  </nav>
+</header>
+<main>
+  <section id="tab-top">
+    <div class="card row">
+      <label>Capital CLP <input id="capital" type="number" step="100000" min="1"></label>
+      <label>Pasos <input id="steps" type="number" min="1" max="10" style="width:60px"></label>
+      <label>Top <input id="topn" type="number" min="1" max="20" style="width:60px"></label>
+      <button id="recalc">Calcular</button>
+      <span id="topmeta" class="muted"></span>
+    </div>
+    <div id="toplist"></div>
+    <p class="muted">Ranking solo por ganancia neta. La confianza indica riesgo, no cambia el orden. Confirmar precios antes de desplazarse.</p>
+  </section>
+  <section id="tab-opps" hidden>
+    <div class="card row">
+      <label>Estado <select id="oppstatus"><option value="">todos</option></select></label>
+    </div>
+    <div class="card scroll"><table id="opptable"></table></div>
+    <div id="oppdetail"></div>
+  </section>
+  <section id="tab-quotes" hidden><div class="card scroll"><table id="quotetable"></table></div></section>
+  <section id="tab-houses" hidden>
+    <div class="card" id="housestats"></div>
+    <div class="card"><div id="map"></div><p class="muted">Solo se muestran sucursales con coordenadas registradas.</p></div>
+    <div class="card scroll"><table id="housetable"></table></div>
+  </section>
+  <section id="tab-stats" hidden><div class="card"><pre id="statsbox"></pre></div></section>
+</main>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const token = new URLSearchParams(location.search).get("token");
+const STATUSES = ["DETECTED","PENDING_VERIFICATION","VERIFIED","EXPIRED","EXECUTED","FAILED","PARTIALLY_EXECUTED"];
+const CONF = {HIGH:"ALTA", MEDIUM:"MEDIA", LOW:"BAJA"};
+const fmt = n => n == null ? "—" : Math.round(n).toLocaleString("es-CL");
+const clp = (n, sign) => n == null ? "—" : (sign && n >= 0 ? "+" : n < 0 ? "-" : "") + "$" + fmt(Math.abs(n));
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+async function api(path, opts = {}) {
+  const url = new URL(path, location.origin);
+  if (token) url.searchParams.set("token", token);
+  const r = await fetch(url, {headers: {"Content-Type": "application/json"}, ...opts});
+  if (!r.ok) throw new Error((await r.json()).detail || r.statusText);
+  return r.json();
+}
+
+function routeCard(r) {
+  const steps = r.route.map(s => `<tr><td>${s.position}</td><td>${esc(s.house)}${s.branch_used ? " · " + esc(s.branch_used) : ""}</td>
+    <td>${s.from_currency} → ${s.to_currency}</td><td class="num">${s.rate.toLocaleString("es-CL")}</td>
+    <td>${s.rate_used === "sell_rate" ? "venta" : "compra"}</td><td class="num">${Math.round(s.quote_age_minutes)} min</td></tr>`).join("");
+  const tags = (r.flags || []).map(f => `<span class="tag warn">${esc(f)}</span>`).join("");
+  return `<div class="card">
+    <div class="row"><strong>#${r.rank}</strong><span class="profit">${clp(r.net_profit_clp, true)}</span>
+      <span>${r.currencies.join(" → ")}</span>
+      <span class="${r.confidence}">Confianza ${CONF[r.confidence] || "—"} ${r.confidence_score != null ? "(" + Math.round(r.confidence_score) + "/100)" : ""}</span></div>
+    <div class="row muted"><span>CLP final neto ${clp(r.net_final_clp)}</span><span>Bruta ${clp(r.gross_profit_clp, true)}</span>
+      <span>Comisiones -${clp(r.commissions_clp)}</span><span>Margen -${clp(r.safety_margin_clp)}</span><span>Transporte -${clp(r.transport_clp)}</span>${r.alt_transport ? `<span>En ${r.alt_transport.label}: ${clp(r.alt_transport.net_profit_clp, true)}</span>` : ''}
+      <span>${r.distance_km == null ? "distancia desconocida" : r.distance_km.toFixed(1) + " km"}</span>
+      <span>${r.estimated_minutes == null ? "" : Math.round(r.estimated_minutes) + " min"}</span>
+      <span>${r.executable_now === false ? "⏰ casa cerrada" : r.executable_now ? "abierto ahora" : "horario desconocido"}</span></div>
+    <div class="scroll"><table><tr><th>#</th><th>Casa</th><th>Operación</th><th class="num">Tasa</th><th>Precio</th><th class="num">Antigüedad</th></tr>${steps}</table></div>
+    <div>${tags}</div>
+    ${(r.warnings || []).length ? `<details><summary class="muted">Por qué esta confianza</summary><ul>${r.warnings.map(w => `<li>${esc(w)}</li>`).join("")}</ul></details>` : ""}
+  </div>`;
+}
+
+async function loadTop() {
+  const p = new URLSearchParams();
+  for (const [id, key] of [["capital","capital"],["steps","steps"],["topn","top"]]) {
+    const v = document.getElementById(id).value; if (v) p.set(key, v);
+  }
+  const box = document.getElementById("toplist");
+  box.innerHTML = '<p class="muted">Calculando…</p>';
+  try {
+    const d = await api("/api/top?" + p);
+    document.getElementById("capital").placeholder = d.initial_clp;
+    document.getElementById("topmeta").textContent = `${d.quotes_used} cotizaciones · ${d.routes_valid} rutas válidas`;
+    box.innerHTML = d.routes.length ? d.routes.map(routeCard).join("") : '<div class="card">No hay rutas con ganancia neta positiva con las cotizaciones actuales.</div>';
+  } catch (e) { box.innerHTML = `<div class="card">${esc(e.message)}</div>`; }
+}
+
+async function loadOpps() {
+  const st = document.getElementById("oppstatus").value;
+  const rows = await api("/api/opportunities" + (st ? "?status=" + st : ""));
+  document.getElementById("opptable").innerHTML = `<tr><th>#</th><th>Detectada</th><th>Estado</th><th class="num">Neta</th><th>Confianza</th><th>Ruta</th><th></th></tr>` +
+    rows.map(o => `<tr><td>${o.id}</td><td>${new Date(o.detected_at).toLocaleString("es-CL")}</td><td>${o.status}</td>
+      <td class="num">${clp(o.net_profit_clp, true)}</td><td class="${o.confidence}">${CONF[o.confidence] || "—"}</td>
+      <td>${o.currencies.join(" → ")}</td><td><button onclick="showOpp(${o.id})">Ver</button></td></tr>`).join("");
+}
+
+async function showOpp(id) {
+  const o = await api("/api/opportunities/" + id);
+  const msgs = o.verification_messages.map(m => `<li><strong>${esc(m.house)}</strong>: ${esc(m.text)}
+    ${m.whatsapp_link ? ` <a href="${esc(m.whatsapp_link)}" target="_blank" rel="noopener">WhatsApp</a>` : ""}${m.phone ? " · " + esc(m.phone) : ""}</li>`).join("");
+  document.getElementById("oppdetail").innerHTML = `<div class="card"><h3>Oportunidad #${o.id} · ${o.status}</h3>
+    ${routeCard(o.route)}<h4>Mensajes de verificación</h4><ul>${msgs}</ul>
+    <div class="row"><select id="newstatus">${STATUSES.map(s => `<option>${s}</option>`).join("")}</select>
+    <input id="reason" placeholder="Razón (obligatoria si FAILED)" style="min-width:260px">
+    <input id="finalclp" type="number" placeholder="CLP final real (si se ejecutó)">
+    <button onclick="setStatus(${o.id})">Guardar estado</button></div></div>`;
+}
+
+async function setStatus(id) {
+  try {
+    await api(`/api/opportunities/${id}/status`, {method: "POST", body: JSON.stringify({
+      status: document.getElementById("newstatus").value,
+      reason: document.getElementById("reason").value || null,
+      final_clp: document.getElementById("finalclp").value ? Number(document.getElementById("finalclp").value) : null,
+    })});
+    await loadOpps(); await showOpp(id);
+  } catch (e) { alert(e.message); }
+}
+
+async function loadQuotes() {
+  const rows = await api("/api/quotes");
+  rows.sort((a, b) => a.currency.localeCompare(b.currency) || a.house.localeCompare(b.house));
+  document.getElementById("quotetable").innerHTML = `<tr><th>Casa</th><th>Divisa</th><th class="num">Compra</th><th class="num">Venta</th><th>Obtenida</th><th>Banderas</th><th>Fuente</th></tr>` +
+    rows.map(q => `<tr><td>${esc(q.house)}</td><td>${q.currency}</td><td class="num">${q.buy_rate ?? "—"}</td><td class="num">${q.sell_rate ?? "—"}</td>
+      <td>${new Date(q.timestamp_collected).toLocaleString("es-CL")}</td><td>${(q.flags || []).join(", ")}</td><td>${esc(q.source_url)}</td></tr>`).join("");
+}
+
+let map;
+async function loadHouses() {
+  const d = await api("/api/houses");
+  document.getElementById("housestats").textContent = `Casas registradas: ${d.discovered} · con cotización reciente: ${d.with_active_quotes} · sin datos recientes: ${d.unavailable}`;
+  const rows = [];
+  if (!map && window.L) {
+    map = L.map("map").setView([-33.44, -70.65], 13);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {attribution: "© OpenStreetMap"}).addTo(map);
+  }
+  for (const h of d.houses) for (const b of (h.branches.length ? h.branches : [{}])) {
+    rows.push(`<tr><td>${esc(h.name)}</td><td>${esc(b.name)}</td><td>${esc(b.address) || "—"}</td><td>${esc(b.comuna) || "—"}</td>
+      <td>${esc(b.phone || h.phone) || "—"}</td><td>${esc(b.opening_hours) || "—"}</td><td>${b.verified ? "sí" : "no"}</td></tr>`);
+    if (map && b.latitude != null) L.marker([b.latitude, b.longitude]).addTo(map).bindPopup(`${esc(h.name)} · ${esc(b.name)}<br>${esc(b.address)}`);
+  }
+  document.getElementById("housetable").innerHTML = `<tr><th>Casa</th><th>Sucursal</th><th>Dirección</th><th>Comuna</th><th>Teléfono</th><th>Horario publicado</th><th>Verificada</th></tr>` + rows.join("");
+}
+
+async function loadStats() { document.getElementById("statsbox").textContent = JSON.stringify(await api("/api/stats"), null, 2); }
+
+const loaders = {top: loadTop, opps: loadOpps, quotes: loadQuotes, houses: loadHouses, stats: loadStats};
+document.querySelectorAll("nav button").forEach(b => b.onclick = () => {
+  document.querySelectorAll("nav button").forEach(x => x.classList.toggle("active", x === b));
+  document.querySelectorAll("main section").forEach(s => s.hidden = s.id !== "tab-" + b.dataset.tab);
+  loaders[b.dataset.tab]().catch(e => console.error(e));
+  if (b.dataset.tab === "houses" && map) setTimeout(() => map.invalidateSize(), 50);
+});
+document.getElementById("oppstatus").innerHTML += STATUSES.map(s => `<option>${s}</option>`).join("");
+document.getElementById("oppstatus").onchange = loadOpps;
+document.getElementById("recalc").onclick = loadTop;
+loadTop();
+</script>
+</body>
+</html>
