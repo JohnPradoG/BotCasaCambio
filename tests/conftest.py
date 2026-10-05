@@ -28,3 +28,9 @@ def engine():
 def session(engine):
     with session_scope(engine) as s:
         yield s
+
+
+@pytest.fixture(autouse=True)
+def no_market_reference(monkeypatch):
+    """Los tests no consultan Binance/Buda; el test de la referencia la prueba con sesiones falsas."""
+    monkeypatch.setattr("app.services.cycle_service.get_reference", lambda settings: None)

@@ -204,7 +204,12 @@ def _prices_text(currency: str | None) -> str:
         rows = [PriceRow(house=q.house.name + (f" ({q.branch})" if q.branch else ""), currency=q.currency,
                          buy_rate=q.buy_rate, sell_rate=q.sell_rate, collected=q.timestamp_collected)
                 for q in latest_quotes(s, int(settings.max_quote_usable_hours * 60))]
-    return prices_text(rows, currency, settings.timezone)
+    market = None
+    if settings.market_reference.strip() and currency in (None, "USD"):
+        from app.services.market_reference import get_reference
+
+        market = get_reference(settings)
+    return prices_text(rows, currency, settings.timezone, market)
 
 
 def cmd_export_houses(args) -> int:

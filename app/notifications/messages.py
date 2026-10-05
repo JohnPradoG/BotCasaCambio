@@ -155,11 +155,15 @@ def format_alert_route(route: Route, directory: dict[str, ExchangeHouse], detail
     return "\n".join(lines)
 
 
-def format_alert(routes: list[Route], directory: dict[str, ExchangeHouse], initial_clp: float) -> str:
+def format_alert(routes: list[Route], directory: dict[str, ExchangeHouse], initial_clp: float, market=None) -> str:
     parts = ["🔥 ARBITRAJE DETECTADO", "", "Capital inicial:", f"{clp(initial_clp)} CLP", ""]
     for i, route in enumerate(routes):
         parts.append(format_alert_route(route, directory, detailed=(i == 0)))
         parts.append("")
+    if market is not None:  # referencia del dólar digital; no cambia el cálculo de la ruta
+        from app.services.market_reference import reference_line
+
+        parts.append(reference_line(market))
     return "\n".join(parts).rstrip()
 
 

@@ -33,7 +33,19 @@ def _hour(dt: datetime, zone: ZoneInfo) -> str:
     return dt.astimezone(zone).strftime("%H:%M")
 
 
-def currency_detail(rows: list[PriceRow], currency: str, tz: str = "America/Santiago") -> str:
+def _mark(r: PriceRow, market) -> str:
+    """Marca del dólar frente al mercado: ⬇️ vende bajo lo que paga el mercado, ⬆️ compra sobre lo que cobra."""
+    if market is None or r.currency != "USD":
+        return ""
+    marks = []
+    if r.sell_rate is not None and r.sell_rate < market.bid:
+        marks.append("⬇️ barato")
+    if r.buy_rate is not None and r.buy_rate > market.ask:
+        marks.append("⬆️ paga más")
+    return f" {' '.join(marks)}" if marks else ""
+
+
+def currency_detail(rows: list[PriceRow], currency: str, tz: str = "America/Santiago", market=None) -> str:
     zone = ZoneInfo(tz)
     rows = [r for r in rows if r.currency == currency]
     if not rows:
@@ -43,12 +55,17 @@ def currency_detail(rows: list[PriceRow], currency: str, tz: str = "America/Sant
     for r in rows:
         buy = _num(r.buy_rate) if r.buy_rate is not None else "—"
         sell = _num(r.sell_rate) if r.sell_rate is not None else "—"
-        lines.append(f"• {r.house}: {buy} / {sell} ({_hour(r.collected, zone)})")
+        lines.append(f"• {r.house}: {buy} / {sell} ({_hour(r.collected, zone)}){_mark(r, market)}")
     lines.append("Compra = lo que te pagan si vendes. Venta = lo que pagas si compras.")
+    if currency == "USD" and market is not None:
+        from app.services.market_reference import reference_line
+
+        lines.append(reference_line(market))
+        lines.append("⬇️ = la casa vende bajo el mercado · ⬆️ = la casa compra sobre el mercado.")
     return "\n".join(lines)
 
 
-def overview(rows: list[PriceRow], tz: str = "America/Santiago") -> str:
+def overview(rows: list[PriceRow], tz: str = "America/Santiago", market=None) -> str:
     if not rows:
         return "No hay precios guardados en las últimas horas."
     houses = sorted({r.house for r in rows})
@@ -70,9 +87,13 @@ def overview(rows: list[PriceRow], tz: str = "America/Santiago") -> str:
     others = sorted({r.currency for r in rows} - set(MAIN_CURRENCIES))
     if others:
         lines.append(f"Otras divisas: {', '.join(others)}.")
+    if market is not None:
+        from app.services.market_reference import reference_line
+
+        lines.append(reference_line(market))
     lines.append("Detalle por casa: /precios USD (o la divisa que quieras).")
     return "\n".join(lines)
 
 
-def prices_text(rows: list[PriceRow], currency: str | None = None, tz: str = "America/Santiago") -> str:
-    return currency_detail(rows, currency, tz) if currency else overview(rows, tz)
+def prices_text(rows: list[PriceRow], currency: str | None = None, tz: str = "America/Santiago", market=None) -> str:
+    return currency_detail(rows, currency, tz, market) if currency else overview(rows, tz, market)
