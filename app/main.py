@@ -195,6 +195,18 @@ def _house_list() -> tuple[Path, str]:
     return path, summary(rows)
 
 
+def _prices_text(currency: str | None) -> str:
+    from app.services.price_summary import PriceRow, prices_text
+
+    settings = get_settings()
+    init_db()
+    with session_scope() as s:
+        rows = [PriceRow(house=q.house.name + (f" ({q.branch})" if q.branch else ""), currency=q.currency,
+                         buy_rate=q.buy_rate, sell_rate=q.sell_rate, collected=q.timestamp_collected)
+                for q in latest_quotes(s, int(settings.max_quote_usable_hours * 60))]
+    return prices_text(rows, currency, settings.timezone)
+
+
 def cmd_export_houses(args) -> int:
     path, text = _house_list()
     print(text)
@@ -224,6 +236,7 @@ def make_command_poller():
         after_price=lambda: _analysis_text(scrape_manual=True, short=True),
         top=lambda: _analysis_text(scrape_manual=True, short=False),
         house_list=_house_list,
+        prices=_prices_text,
     )
     return TelegramCommandPoller(settings, handlers)
 
