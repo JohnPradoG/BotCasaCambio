@@ -8,6 +8,7 @@ ignora. Comandos:
 * ``/top``: Top N con lo que hay guardado (sin consultar las casas).
 * ``/casas``: nombres que se pueden usar en ``/precio``.
 * ``/lista``: planilla con todas las casas, con y sin precio, y sus teléfonos.
+* ``/precios [divisa]``: precios guardados de hoy (resumen, o detalle de una divisa).
 * ``/ayuda``.
 
 El bot nunca ejecuta operaciones: solo registra y calcula.
@@ -24,6 +25,7 @@ from typing import Callable
 import requests
 
 from app.config.settings import Settings
+from app.models.currency import normalize_currency_code
 from app.services.manual_entry import USAGE, ManualEntryError, parse_price_command, save_manual_price
 
 logger = logging.getLogger(__name__)
@@ -34,6 +36,7 @@ HELP = (
     "/top: mejores rutas con los precios guardados\n"
     "/casas: nombres de casas para /precio\n"
     "/lista: planilla de casas con y sin precio, con teléfonos para llamar\n"
+    "/precios: mejores precios de hoy; /precios USD: todas las casas para esa divisa\n"
     "El bot solo calcula y avisa; nunca compra ni vende."
 )
 
@@ -46,6 +49,7 @@ class CommandHandlers:
     after_price: Callable[[], str]  # recalcula y devuelve un resumen corto
     top: Callable[[], str]
     house_list: Callable[[], tuple[Path, str]] | None = None  # (archivo CSV, resumen)
+    prices: Callable[[str | None], str] | None = None  # divisa o None → texto
 
 
 @dataclass
@@ -144,6 +148,12 @@ class TelegramCommandPoller:
             if command == "/casas":
                 houses = self.handlers.known_houses()
                 return "Casas registradas:\n" + "\n".join(f"{slug} ({name})" for slug, name in sorted(houses.items()))
+            if command == "/precios" and self.handlers.prices:
+                arg = text.split()[1] if len(text.split()) > 1 else None
+                currency = normalize_currency_code(arg) if arg else None
+                if arg and not currency:
+                    return f"No reconozco la divisa {arg!r}. Ejemplo: /precios USD"
+                return self.handlers.prices(currency)
             if command == "/lista" and self.handlers.house_list:
                 path, text = self.handlers.house_list()
                 return text if self._send_document(path, "Casas de cambio") else f"{text}\n⚠️ No se pudo enviar la planilla."

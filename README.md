@@ -181,6 +181,7 @@ escríbele al bot desde el chat configurado (los demás chats se ignoran):
 /top                              mejores rutas con lo guardado
 /casas                            nombres de casas registradas
 /lista                            planilla de casas con y sin precio, con teléfonos (también: python -m app.main export-houses --telegram)
+/precios                          mejores precios de hoy por divisa; /precios USD = todas las casas
 ```
 
 Cada precio queda en `data/manual_quotes.csv` con su hora (reemplaza el anterior de esa
