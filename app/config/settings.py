@@ -45,6 +45,14 @@ class Settings(BaseSettings):
     # Mínimo de casas con la misma divisa para poder comparar.
     anomaly_min_peers: int = Field(3, ge=2)
 
+    # --- Dólar de mercado (USDT/CLP) como referencia, no entra a las rutas ---
+    # Fuentes en orden (binance, buda); vacío = desactivado.
+    market_reference: str = "binance,buda"
+    # Aviso "casa fuera de mercado" si el dólar de una casa se aleja más que esto (%).
+    market_gap_percent: float = Field(0.3, ge=0)
+    # No repetir el aviso de la misma casa y lado antes de estas horas.
+    market_alert_cooldown_hours: float = Field(6, ge=0)
+
     # --- Comisiones estimadas manuales (si la casa no publica la suya) ---
     default_commission_percent: float | None = None
     default_commission_fixed_clp: float | None = None

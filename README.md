@@ -189,6 +189,16 @@ casa y divisa) y el bot responde con la mejor ruta. Sin Telegram:
 `python -m app.main add-quote gamaex USD 970 990 --source tel:+5622...`.
 Compra = lo que la casa te paga por 1 unidad; venta = lo que te cobra.
 
+### Dólar de mercado (Binance P2P / Buda)
+
+`/precios` y las alertas muestran el precio del USDT/CLP como referencia del dólar de
+mercado: primero Binance P2P (anuncios para el monto del capital) y, si no responde o su
+robots.txt no lo permite, el ticker público de Buda.com (`MARKET_REFERENCE=binance,buda`;
+vacío lo desactiva). No entra al cálculo de rutas: el USDT no es billete y ninguna casa lo
+cambia. Si el dólar de una casa se aleja más de `MARKET_GAP_PERCENT` (0,3 %) del mercado
+(vende bajo lo que paga el mercado, o compra sobre lo que cobra), llega un aviso
+"CASA FUERA DE MERCADO", como máximo una vez cada `MARKET_ALERT_COOLDOWN_HOURS` (6) por casa.
+
 ## Cómo se decide el ranking
 
 - Ranking **solo por ganancia neta** = CLP final − capital − comisiones − margen de seguridad − transporte.

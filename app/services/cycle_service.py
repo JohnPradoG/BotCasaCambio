@@ -18,6 +18,7 @@ from app.notifications.telegram import ConsoleNotifier, TelegramNotifier
 from app.scrapers.registry import get_scrapers
 from app.services.arbitrage_engine import Route, SearchStats, find_best_routes, reprice_route
 from app.services.house_service import house_directory, sync_all_houses
+from app.services.market_reference import find_gaps, gaps_text, get_reference
 from app.services.opportunity_service import quotes_for_engine, save_routes
 from app.services.quote_service import collect_quotes
 from app.services.verification_service import expire_old
@@ -30,6 +31,7 @@ class CycleResult:
     routes: list[Route] = field(default_factory=list)
     alerted: list[Route] = field(default_factory=list)
     drop_alerts: list[str] = field(default_factory=list)  # firmas de rutas cuya baja se avisó
+    market_alerts: list[str] = field(default_factory=list)  # "casa:lado" avisados fuera de mercado
     quotes_used: int = 0
     expired: int = 0
     stats: SearchStats = field(default_factory=SearchStats)
@@ -114,6 +116,39 @@ def check_drops(session: Session, quotes, settings: Settings, directory: dict, n
     return sent
 
 
+_market_alerted: dict[str, datetime] = {}  # "casa:lado" -> último aviso (en memoria)
+
+
+def _market_ref(settings: Settings):
+    if not settings.market_reference.strip():
+        return None
+    try:
+        return get_reference(settings)
+    except Exception:  # la referencia es opcional: nunca debe cortar el ciclo
+        logger.exception("No se pudo leer el dólar de mercado")
+        return None
+
+
+def check_market_gaps(quotes, ref, settings: Settings, directory: dict, notifier, now=None,
+                      state: dict[str, datetime] | None = None) -> list[str]:
+    """Avisa de casas cuyo dólar está fuera de mercado, una vez cada ``MARKET_ALERT_COOLDOWN_HOURS``."""
+    if ref is None:
+        return []
+    now = now or utcnow()
+    state = _market_alerted if state is None else state
+    names = {slug: h.name for slug, h in directory.items()}
+    gaps = find_gaps(quotes, ref, settings.market_gap_percent, names)
+    cooldown = timedelta(hours=settings.market_alert_cooldown_hours)
+    fresh = [g for g in gaps if f"{g.house}:{g.side}" not in state or now - state[f"{g.house}:{g.side}"] >= cooldown]
+    if not fresh or not notifier.send(gaps_text(fresh) + "\n" + f"Fuente: {ref.url}"):
+        return []
+    keys = [f"{g.house}:{g.side}" for g in fresh]
+    for key in keys:
+        state[key] = now
+    logger.info("Aviso fuera de mercado: %s", ", ".join(keys))
+    return keys
+
+
 def run_cycle(session: Session, settings: Settings, scrape: bool = True, notifier=None,
               capital: float | None = None, top_n: int | None = None, max_steps: int | None = None,
               save: bool = True, alert: bool = True) -> CycleResult:
@@ -136,7 +171,8 @@ def run_cycle(session: Session, settings: Settings, scrape: bool = True, notifie
             if to_alert:
                 notifier = notifier or make_notifier(settings)
                 worth = [r for r in result.routes if r.net_profit_clp >= settings.min_net_profit_clp]
-                if notifier.send(format_alert(worth, directory, result.routes[0].initial_clp)):
+                text = format_alert(worth, directory, result.routes[0].initial_clp, market=_market_ref(settings))
+                if notifier.send(text):
                     now = utcnow()
                     alerted_sigs = {r.signature for r in worth}
                     for row in rows:
@@ -145,6 +181,7 @@ def run_cycle(session: Session, settings: Settings, scrape: bool = True, notifie
                     result.alerted = worth
             notifier = notifier or make_notifier(settings)
             result.drop_alerts = check_drops(session, quotes, settings, directory, notifier)
+            result.market_alerts = check_market_gaps(quotes, _market_ref(settings), settings, directory, notifier)
         result.expired = expire_old(session, settings.opportunity_ttl_minutes)
     session.flush()
     return result
