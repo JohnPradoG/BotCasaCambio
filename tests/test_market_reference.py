@@ -126,3 +126,30 @@ def test_prices_text_with_market():
     assert "Barata: 960 / 975 (09:00) ⬇️ barato" in detail
     assert "Gamaex: 977 / 987 (09:00)\n" in detail
     assert "Dólar de mercado" not in prices_text(rows, "USD")
+
+
+class TickerSession:
+    def __init__(self, data, status=200):
+        self.data, self.status, self.urls = data, status, []
+
+    def get(self, url, **kw):
+        self.urls.append(url)
+        return FakeResp(self.data, self.status)
+
+
+def test_cryptomkt_ticker():
+    session = TickerSession({"ask": "990.1", "bid": "985.2", "last": "987"})
+    ref = mr.from_cryptomkt(_settings(), session)
+    assert (ref.source, ref.bid, ref.ask) == ("CryptoMarket", 985.2, 990.1)
+    assert session.urls == [mr.CRYPTOMKT_URL]
+
+
+def test_cryptomkt_without_offers_is_none():
+    assert mr.from_cryptomkt(_settings(), TickerSession({"ask": None, "bid": "985"})) is None
+
+
+def test_cryptomkt_robots_disallow(monkeypatch):
+    monkeypatch.setattr(mr, "_allowed", lambda url, settings: False)
+    session = TickerSession({"ask": "990", "bid": "985"})
+    assert mr.from_cryptomkt(_settings(), session) is None
+    assert session.urls == []

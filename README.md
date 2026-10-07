@@ -211,8 +211,9 @@ publicados hace más de `MAX_QUOTE_USABLE_HOURS` (no se usan). A las `HEALTH_REP
 
 ### Diferencia de USDT entre plataformas
 
-Con los mismos precios de Buda.com y Binance P2P, el bot revisa si comprar USDT en una y
-venderlo en la otra deja ganancia con el capital (`USDT_VENUES=buda,binance`; vacío lo
+Con los precios de Buda.com, Binance P2P y CryptoMarket (ticker público), el bot revisa si
+comprar USDT en una y venderlo en otra deja ganancia con el capital
+(`USDT_VENUES=buda,binance,cryptomkt`; vacío lo
 desactiva). Comisión por operación en `USDT_FEE_PERCENT` (0 = el aviso dice "antes de
 comisiones"); aviso como máximo cada `USDT_ALERT_COOLDOWN_HOURS` (2) por par. Solo avisa.
 

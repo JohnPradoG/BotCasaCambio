@@ -53,7 +53,7 @@ class Settings(BaseSettings):
     # No repetir el aviso de la misma casa y lado antes de estas horas.
     market_alert_cooldown_hours: float = Field(6, ge=0)
     # Diferencia de USDT entre plataformas (comprar en una, vender en otra); vacío = desactivado.
-    usdt_venues: str = "buda,binance"
+    usdt_venues: str = "buda,binance,cryptomkt"
     # Comisión por operación (%) en esas plataformas; 0 = el aviso dice "antes de comisiones".
     usdt_fee_percent: float = Field(0, ge=0)
     usdt_alert_cooldown_hours: float = Field(2, ge=0)
