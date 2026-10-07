@@ -17,7 +17,7 @@ La especificación completa (53 secciones) está en [`docs/SPEC.md`](docs/SPEC.m
 - Toda casa/cotización guarda su `source_url`.
 - Respetar robots.txt y términos de uso; no saltarse CAPTCHAs ni autenticación.
   Única excepción, autorizada por John el 2026-10-07: las API de precios de Binance P2P, Buda,
-  CryptoMarket, Bybit P2P y OKX P2P (`ROBOTS_EXEMPT_APIS`). No agregar otras sin que él lo pida.
+  CryptoMarket (hoy Notbank), Bybit P2P y OKX P2P (`ROBOTS_EXEMPT_APIS`). No agregar otras sin que él lo pida.
 - El bot solo detecta, calcula, alerta y registra. **Nunca ejecuta operaciones.**
 
 ## Desarrollo

@@ -214,18 +214,18 @@ publicados hace más de `MAX_QUOTE_USABLE_HOURS` (se usan con aviso de confirmar
 
 Con los precios de Buda.com, Binance P2P, CryptoMarket (ticker público), Bybit P2P y OKX P2P, el bot revisa si
 comprar USDT en una y venderlo en otra deja ganancia con el capital
-(`USDT_VENUES=buda,binance,okx`; vacío lo
+(`USDT_VENUES=buda,binance,okx,notbank`; vacío lo
 desactiva). Comisión por operación en `USDT_FEE_PERCENT` (0 = el aviso dice "antes de
 comisiones"); aviso como máximo cada `USDT_ALERT_COOLDOWN_HOURS` (2) por par. Solo avisa.
 
 Estas plataformas piden en su robots.txt no leer sus API. John autorizó el 2026-10-07
 leerlas igual (solo precios públicos, unas pocas consultas cada ciclo):
-`ROBOTS_EXEMPT_APIS=binance,buda,cryptomkt,bybit,okx`. Las casas de cambio siguen respetando robots.txt.
+`ROBOTS_EXEMPT_APIS=binance,buda,cryptomkt,bybit,okx,notbank`. Las casas de cambio siguen respetando robots.txt.
 
 Además del USDT se comparan las criptos de `CRYPTO_ASSETS` (USDT, BTC, ETH, USDC), siempre
 la misma cripto entre plataformas; el aviso recuerda la comisión de retiro al moverla.
 Desde el VPS (EE.UU.), el 2026-10-07: `cryptomkt` ya no resuelve (CryptoMarket pasó a ser
-Notbank, con otra API) y `bybit` no responde (Bybit no atiende a EE.UU.); por eso no están por
+Notbank; se lee con `notbank`, el libro de órdenes público de su API nueva) y `bybit` no responde (Bybit no atiende a EE.UU.); por eso no están por
 defecto. Sus lectores siguen en el código por si cambian.
 `/usdt` muestra el precio de cada cripto en cada plataforma ahora y cuáles no responden.
 
