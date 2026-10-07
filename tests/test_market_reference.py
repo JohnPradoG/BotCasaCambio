@@ -195,3 +195,25 @@ def test_p2p_without_ads_is_none():
             return FakeResp({"code": 0, "data": {}})
 
     assert mr.from_okx(_settings(), Empty()) is None
+
+
+class NotbankSession:
+    def __init__(self, data):
+        self.data, self.calls = data, []
+
+    def post(self, url, json=None, **kw):
+        self.calls.append((url, json))
+        return FakeResp(self.data)
+
+
+def test_notbank_order_book():
+    session = NotbankSession({"timestamp": 1, "bids": [["10", "975.5"], ["5", "974"]], "asks": [["3", "981"], ["1", "983"]]})
+    ref = mr.from_notbank(_settings(), session, "BTC")
+    assert (ref.source, ref.asset, ref.bid, ref.ask) == ("Notbank", "BTC", 975.5, 981.0)
+    assert session.calls == [(mr.NOTBANK_URL, {"Market_Pair": "BTCCLP", "Depth": 1, "Level": 2})]
+
+
+def test_notbank_errors_and_empty_book():
+    assert mr.from_notbank(_settings(), NotbankSession({"bids": [], "asks": [["1", "981"]]})) is None
+    with pytest.raises(ValueError, match="Instrument not found"):
+        mr.from_notbank(_settings(), NotbankSession({"result": False, "errormsg": "Instrument not found"}))

@@ -9,6 +9,8 @@ Fuentes, en el orden de ``MARKET_REFERENCE`` (la primera que responda):
 * ``binance``: anuncios P2P de USDT/CLP de Binance, filtrados por el monto del capital.
 * ``buda``: ticker público de Buda.com (API documentada) para USDT-CLP.
 * ``bybit`` / ``okx``: anuncios P2P de USDT/CLP de Bybit y OKX, filtrados por el monto del capital.
+* ``notbank``: libro de órdenes público de Notbank (ex CryptoMarket), ``POST /ap/OrderBook``
+  según su librería oficial (``notbank`` en PyPI).
 * ``cryptomkt``: ticker público de CryptoMarket (API v3 documentada, sin clave) para USDT/CLP.
 
 Se respeta robots.txt de cada sitio, salvo las API de ``ROBOTS_EXEMPT_APIS`` (John autorizó
@@ -35,6 +37,7 @@ BINANCE_URL = "https://p2p.binance.com/bapi/c2c/v2/friendly/c2c/adv/search"
 BUDA_URL = "https://www.buda.com/api/v2/markets/usdt-clp/ticker"
 BYBIT_URL = "https://api2.bybit.com/fiat/otc/item/online"
 OKX_URL = "https://www.okx.com/v3/c2c/tradingOrders/books"
+NOTBANK_URL = "https://api.notbank.exchange/ap/OrderBook"
 CRYPTOMKT_URL = "https://api.exchange.cryptomkt.com/api/3/public/ticker/USDTCLP"
 CACHE_SECONDS = 300
 
@@ -170,8 +173,27 @@ def from_okx(settings: Settings, session: requests.Session, asset: str = "USDT")
                      url=f"https://www.okx.com/es-la/p2p-markets/clp/buy-{asset.lower()}")
 
 
+def from_notbank(settings: Settings, session: requests.Session, asset: str = "USDT") -> MarketRef | None:
+    if not _allowed(NOTBANK_URL, settings, "notbank"):
+        logger.info("robots.txt de Notbank no permite la consulta; se omite")
+        return None
+    body = {"Market_Pair": f"{asset.upper()}CLP", "Depth": 1, "Level": 2}
+    resp = session.post(NOTBANK_URL, json=body, timeout=settings.scraper_timeout_seconds,
+                        headers={"User-Agent": settings.scraper_user_agent})
+    resp.raise_for_status()
+    book = resp.json() or {}
+    if book.get("result") is False:  # error estándar de la API (p. ej. par inexistente)
+        raise ValueError(book.get("errormsg") or "Notbank rechazó la consulta")
+    try:  # cada nivel es [cantidad, precio]
+        bid = max(float(level[1]) for level in book["bids"])
+        ask = min(float(level[1]) for level in book["asks"])
+    except (KeyError, IndexError, TypeError, ValueError):  # sin ofertas en algún lado
+        return None
+    return MarketRef("Notbank", bid=bid, ask=ask, asset=asset, url="https://notbank.exchange/")
+
+
 SOURCES = {"binance": from_binance, "buda": from_buda, "cryptomkt": from_cryptomkt, "bybit": from_bybit,
-           "okx": from_okx}
+           "okx": from_okx, "notbank": from_notbank}
 _cache: tuple[float, MarketRef | None] | None = None
 
 
