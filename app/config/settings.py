@@ -53,13 +53,13 @@ class Settings(BaseSettings):
     # No repetir el aviso de la misma casa y lado antes de estas horas.
     market_alert_cooldown_hours: float = Field(6, ge=0)
     # Diferencia de USDT entre plataformas (comprar en una, vender en otra); vacío = desactivado.
-    usdt_venues: str = "buda,binance,cryptomkt"
+    usdt_venues: str = "buda,binance,cryptomkt,bybit,okx"
     # Comisión por operación (%) en esas plataformas; 0 = el aviso dice "antes de comisiones".
     usdt_fee_percent: float = Field(0, ge=0)
     usdt_alert_cooldown_hours: float = Field(2, ge=0)
     # Plataformas cuya API de precios se consulta aunque su robots.txt diga que no
-    # (autorizado por John el 2026-10-07; solo lectura de precios públicos, nunca opera).
-    robots_exempt_apis: str = "binance,buda,cryptomkt"
+    # (autorizado por John el 2026-10-07, Bybit y OKX el mismo día; solo lectura de precios públicos, nunca opera).
+    robots_exempt_apis: str = "binance,buda,cryptomkt,bybit,okx"
     # Cada lectura de USDT se guarda aquí para el backtesting (/backtest).
     usdt_history_file: str = str(DATA_DIR / "usdt_prices.csv")
 

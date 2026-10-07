@@ -8,10 +8,11 @@ Fuentes, en el orden de ``MARKET_REFERENCE`` (la primera que responda):
 
 * ``binance``: anuncios P2P de USDT/CLP de Binance, filtrados por el monto del capital.
 * ``buda``: ticker público de Buda.com (API documentada) para USDT-CLP.
+* ``bybit`` / ``okx``: anuncios P2P de USDT/CLP de Bybit y OKX, filtrados por el monto del capital.
 * ``cryptomkt``: ticker público de CryptoMarket (API v3 documentada, sin clave) para USDT/CLP.
 
 Se respeta robots.txt de cada sitio, salvo las API de ``ROBOTS_EXEMPT_APIS`` (John autorizó
-el 2026-10-07 leer los precios de Binance, Buda y CryptoMarket aunque su robots.txt lo pida).
+el 2026-10-07 leer los precios de Binance, Buda, CryptoMarket, Bybit y OKX aunque su robots.txt lo pida).
 Si una fuente no responde, se pasa a la siguiente.
 El resultado se guarda unos minutos para no consultar en cada mensaje.
 """
@@ -32,6 +33,8 @@ logger = logging.getLogger(__name__)
 
 BINANCE_URL = "https://p2p.binance.com/bapi/c2c/v2/friendly/c2c/adv/search"
 BUDA_URL = "https://www.buda.com/api/v2/markets/usdt-clp/ticker"
+BYBIT_URL = "https://api2.bybit.com/fiat/otc/item/online"
+OKX_URL = "https://www.okx.com/v3/c2c/tradingOrders/books"
 CRYPTOMKT_URL = "https://api.exchange.cryptomkt.com/api/3/public/ticker/USDTCLP"
 CACHE_SECONDS = 300
 
@@ -115,7 +118,54 @@ def from_cryptomkt(settings: Settings, session: requests.Session) -> MarketRef |
     return MarketRef("CryptoMarket", bid=bid, ask=ask, url="https://www.cryptomkt.com/es/")
 
 
-SOURCES = {"binance": from_binance, "buda": from_buda, "cryptomkt": from_cryptomkt}
+def _bybit_side(session: requests.Session, settings: Settings, side: str) -> float | None:
+    body = {"userId": "", "tokenId": "USDT", "currencyId": "CLP", "payment": [], "side": side, "size": "5",
+            "page": "1", "amount": str(int(settings.initial_capital_clp)), "authMaker": False, "canTrade": False}
+    resp = session.post(BYBIT_URL, json=body, timeout=settings.scraper_timeout_seconds,
+                        headers={"User-Agent": settings.scraper_user_agent})
+    resp.raise_for_status()
+    items = ((resp.json() or {}).get("result") or {}).get("items") or []
+    prices = [float(i["price"]) for i in items if i.get("price")]
+    return prices[0] if prices else None  # el primer anuncio es el mejor para ese lado
+
+
+def from_bybit(settings: Settings, session: requests.Session) -> MarketRef | None:
+    if not _allowed(BYBIT_URL, settings, "bybit"):
+        logger.info("robots.txt de Bybit no permite la consulta; se omite")
+        return None
+    ask = _bybit_side(session, settings, "1")  # "1": anuncios donde tú compras USDT
+    bid = _bybit_side(session, settings, "0")  # "0": anuncios donde tú vendes USDT
+    if ask is None or bid is None:
+        return None
+    return MarketRef("Bybit P2P", bid=bid, ask=ask, url="https://www.bybit.com/fiat/trade/otc/?actionType=1&token=USDT&fiat=CLP")
+
+
+def _okx_side(session: requests.Session, settings: Settings, side: str) -> float | None:
+    params = {"quoteCurrency": "clp", "baseCurrency": "usdt", "side": side, "paymentMethod": "all",
+              "userType": "all", "quoteMinAmountPerOrder": str(int(settings.initial_capital_clp))}
+    resp = session.get(OKX_URL, params=params, timeout=settings.scraper_timeout_seconds,
+                       headers={"User-Agent": settings.scraper_user_agent})
+    resp.raise_for_status()
+    ads = ((resp.json() or {}).get("data") or {}).get(side) or []
+    prices = [float(a["price"]) for a in ads if a.get("price")]
+    if not prices:
+        return None
+    return min(prices) if side == "sell" else max(prices)
+
+
+def from_okx(settings: Settings, session: requests.Session) -> MarketRef | None:
+    if not _allowed(OKX_URL, settings, "okx"):
+        logger.info("robots.txt de OKX no permite la consulta; se omite")
+        return None
+    ask = _okx_side(session, settings, "sell")  # anuncios que venden USDT: tú compras
+    bid = _okx_side(session, settings, "buy")  # anuncios que compran USDT: tú vendes
+    if ask is None or bid is None:
+        return None
+    return MarketRef("OKX P2P", bid=bid, ask=ask, url="https://www.okx.com/es-la/p2p-markets/clp/buy-usdt")
+
+
+SOURCES = {"binance": from_binance, "buda": from_buda, "cryptomkt": from_cryptomkt, "bybit": from_bybit,
+           "okx": from_okx}
 _cache: tuple[float, MarketRef | None] | None = None
 
 
