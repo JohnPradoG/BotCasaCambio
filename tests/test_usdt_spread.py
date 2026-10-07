@@ -89,3 +89,16 @@ def test_each_crypto_is_compared_only_with_itself(monkeypatch):
     got = us.fetch_all(Settings(_env_file=None, usdt_venues="buda", crypto_assets="USDT,BTC,ETH", usdt_history_file=""),
                        session=object(), use_cache=False)
     assert calls == ["USDT", "BTC", "ETH"] and list(got) == ["buda", "buda:BTC"]
+
+
+def test_venues_text_shows_error_reason(monkeypatch):
+    import requests
+
+    def boom(settings, session, asset="USDT"):
+        raise requests.HTTPError("403 Client Error: Forbidden")
+
+    monkeypatch.setitem(us.SOURCES, "bybit", boom)
+    monkeypatch.setitem(us.SOURCES, "buda", lambda settings, session, asset="USDT": BUDA)
+    settings = Settings(_env_file=None, usdt_venues="buda,bybit", crypto_assets="USDT", usdt_history_file="")
+    text = us.venues_text(us.fetch_all(settings, session=object(), use_cache=False), settings)
+    assert "❌ bybit: no respondió (HTTPError: 403 Client Error: Forbidden)" in text

@@ -27,6 +27,7 @@ from app.services.market_reference import SOURCES, MarketRef
 logger = logging.getLogger(__name__)
 CACHE_SECONDS = 300
 _cache: tuple[float, dict[str, MarketRef]] | None = None
+last_errors: dict[str, str] = {}  # clave -> motivo de la última lectura fallida (para /usdt)
 
 
 def assets(settings: Settings) -> list[str]:
@@ -51,13 +52,18 @@ def fetch_all(settings: Settings, session: requests.Session | None = None, use_c
             logger.warning("USDT_VENUES: plataforma desconocida %r", name)
             continue
         for asset in assets(settings):
+            key = ref_key(name, asset)
             try:
                 ref = source(settings, session, asset)
             except Exception as exc:  # noqa: BLE001 - una plataforma rota no detiene a las demás
                 logger.info("%s en %s no disponible: %s", asset, name, exc)
+                last_errors[key] = f"{type(exc).__name__}: {exc}"[:120]
                 continue
             if ref:
-                refs[ref_key(name, asset)] = ref
+                refs[key] = ref
+                last_errors.pop(key, None)
+            else:
+                last_errors[key] = "respondió sin precios (o robots.txt no lo permite)"
     _cache = (time.monotonic(), refs)
     record(settings.usdt_history_file, refs)
     return refs
@@ -143,7 +149,9 @@ def venues_text(refs: dict[str, MarketRef], settings: Settings) -> str:
         lines += ["", f"{asset}:"]
         for name in names:
             r = refs.get(ref_key(name, asset))
-            lines.append(f"✅ {r.source}: {_rate(r.ask)} / {_rate(r.bid)}" if r else f"❌ {name}: no respondió")
+            why = last_errors.get(ref_key(name, asset))
+            lines.append(f"✅ {r.source}: {_rate(r.ask)} / {_rate(r.bid)}" if r
+                         else f"❌ {name}: no respondió" + (f" ({why})" if why else ""))
         best = next((s for s in find_spreads({k: r for k, r in refs.items() if r.asset == asset},
                                              settings.initial_capital_clp, settings.usdt_fee_percent)
                      if s.buy_at is not s.sell_at), None)

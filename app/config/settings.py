@@ -56,7 +56,7 @@ class Settings(BaseSettings):
     # No repetir el aviso de la misma casa y lado antes de estas horas.
     market_alert_cooldown_hours: float = Field(6, ge=0)
     # Diferencia de USDT entre plataformas (comprar en una, vender en otra); vacío = desactivado.
-    usdt_venues: str = "buda,binance,cryptomkt,bybit,okx"
+    usdt_venues: str = "buda,binance,okx"  # cryptomkt y bybit existen pero no responden desde el VPS (ver README)
     # Comisión por operación (%) en esas plataformas; 0 = el aviso dice "antes de comisiones".
     # Criptos a comparar entre esas plataformas (John, 2026-10-07: "puede ser cualquier cripto").
     crypto_assets: str = "USDT,BTC,ETH,USDC"
