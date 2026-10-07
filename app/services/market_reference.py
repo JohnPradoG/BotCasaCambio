@@ -8,6 +8,7 @@ Fuentes, en el orden de ``MARKET_REFERENCE`` (la primera que responda):
 
 * ``binance``: anuncios P2P de USDT/CLP de Binance, filtrados por el monto del capital.
 * ``buda``: ticker público de Buda.com (API documentada) para USDT-CLP.
+* ``cryptomkt``: ticker público de CryptoMarket (API v3 documentada, sin clave) para USDT/CLP.
 
 Se respeta robots.txt de cada sitio; si no lo permite o falla, se pasa a la siguiente.
 El resultado se guarda unos minutos para no consultar en cada mensaje.
@@ -29,6 +30,7 @@ logger = logging.getLogger(__name__)
 
 BINANCE_URL = "https://p2p.binance.com/bapi/c2c/v2/friendly/c2c/adv/search"
 BUDA_URL = "https://www.buda.com/api/v2/markets/usdt-clp/ticker"
+CRYPTOMKT_URL = "https://api.exchange.cryptomkt.com/api/3/public/ticker/USDTCLP"
 CACHE_SECONDS = 300
 
 
@@ -92,7 +94,22 @@ def from_buda(settings: Settings, session: requests.Session) -> MarketRef | None
     return MarketRef("Buda.com", bid=bid, ask=ask, url="https://www.buda.com/chile")
 
 
-SOURCES = {"binance": from_binance, "buda": from_buda}
+def from_cryptomkt(settings: Settings, session: requests.Session) -> MarketRef | None:
+    if not _allowed(CRYPTOMKT_URL, settings):
+        logger.info("robots.txt de CryptoMarket no permite la consulta; se omite")
+        return None
+    resp = session.get(CRYPTOMKT_URL, timeout=settings.scraper_timeout_seconds,
+                       headers={"User-Agent": settings.scraper_user_agent})
+    resp.raise_for_status()
+    ticker = resp.json() or {}
+    try:
+        bid, ask = float(ticker["bid"]), float(ticker["ask"])
+    except (KeyError, TypeError, ValueError):  # null cuando no hay ofertas
+        return None
+    return MarketRef("CryptoMarket", bid=bid, ask=ask, url="https://www.cryptomkt.com/es/")
+
+
+SOURCES = {"binance": from_binance, "buda": from_buda, "cryptomkt": from_cryptomkt}
 _cache: tuple[float, MarketRef | None] | None = None
 
 
