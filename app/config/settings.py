@@ -39,6 +39,9 @@ class Settings(BaseSettings):
     max_quote_age_minutes: int = Field(10, ge=1)
     # Cotización más antigua que esto: no se usa para detectar oportunidades (sí queda en el historial).
     max_quote_usable_hours: float = Field(24, gt=0)
+    # Precios que la casa publicó hace más de MAX_QUOTE_USABLE_HOURS se usan igual (pueden no
+    # haber cambiado), con aviso "confirmar" y confianza baja, hasta estos días (John, 2026-10-07).
+    max_published_age_days: float = Field(14, gt=0)
     # Desviación máxima (%) del precio medio de una divisa respecto de la mediana
     # del resto de las casas antes de marcar la cotización como ANOMALOUS_QUOTE.
     anomaly_threshold_percent: float = Field(15.0, gt=0)

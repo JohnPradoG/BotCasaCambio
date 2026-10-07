@@ -46,17 +46,19 @@ def row_to_quote(row: QuoteRow) -> NormalizedQuote:
     )
 
 
-def quotes_for_engine(session: Session, max_age_minutes: float | None = None) -> list[NormalizedQuote]:
+def quotes_for_engine(session: Session, max_age_minutes: float | None = None,
+                      max_published_minutes: float | None = None) -> list[NormalizedQuote]:
     """Última cotización por (casa, divisa, sucursal), lista para el motor.
 
-    Las más antiguas que ``max_age_minutes`` no se usan para detectar (siguen en el historial).
-    El límite se aplica también a la hora publicada por la casa: un precio que la página
-    dice haber actualizado hace un mes no es una cotización vigente aunque se haya leído recién.
+    Las leídas hace más de ``max_age_minutes`` no se usan para detectar (siguen en el historial).
+    La hora publicada por la casa tiene su propio límite, ``max_published_minutes`` (por defecto
+    el mismo): un precio publicado hace unos días puede seguir vigente y se usa con aviso, pero
+    uno que la página dice haber actualizado hace meses no.
     """
     quotes = [row_to_quote(r) for r in latest_quotes(session, max_age_minutes)]
     if max_age_minutes is None:
         return quotes
-    limit = utcnow() - timedelta(minutes=max_age_minutes)
+    limit = utcnow() - timedelta(minutes=max_published_minutes or max_age_minutes)
     usable = []
     for q in quotes:
         published = q.timestamp_source

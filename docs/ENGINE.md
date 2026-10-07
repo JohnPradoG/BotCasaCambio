@@ -64,8 +64,9 @@ con estado `PENDING_VERIFICATION`.
 - La antigüedad se mide desde el dato más antiguo entre la hora publicada por la casa
   (`timestamp_source`, p. ej. "Última actualización 02 de Octubre, 10:00") y la hora de
   captura: un precio publicado ayer y leído hace un minuto sigue siendo de ayer.
-  `MAX_QUOTE_USABLE_HOURS` también se aplica a la hora publicada: una página que dice
-  "02 de septiembre" no aporta una cotización vigente aunque se haya leído recién.
+  Un precio publicado hace más de `MAX_QUOTE_USABLE_HOURS` se usa igual (puede no haber
+  cambiado), con confianza BAJA y un aviso "confirma por teléfono" en la alerta, hasta
+  `MAX_PUBLISHED_AGE_DAYS` (14); más viejo que eso no se usa.
 
 ## Recorrido físico (Fase 4, `route_optimizer.py`)
 

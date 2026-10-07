@@ -71,8 +71,17 @@ def verification_messages(route: Route, directory: dict[str, ExchangeHouse]) -> 
     return messages
 
 
+OLD_PRICE_MINUTES = 24 * 60  # igual que MAX_QUOTE_USABLE_HOURS por defecto
+
+
 def _ago(minutes: float) -> str:
-    return "hace menos de 1 min" if minutes < 1 else f"hace {minutes:.0f} min"
+    if minutes < 1:
+        return "hace menos de 1 min"
+    if minutes < 120:
+        return f"hace {minutes:.0f} min"
+    if minutes < 48 * 60:
+        return f"hace {minutes / 60:.0f} h"
+    return f"hace {minutes / 1440:.0f} días"
 
 
 def format_alert_route(route: Route, directory: dict[str, ExchangeHouse], detailed: bool = True) -> str:
@@ -131,6 +140,10 @@ def format_alert_route(route: Route, directory: dict[str, ExchangeHouse], detail
         f"{CONF_ES.get(route.confidence or '', 'sin calcular')}"
         + (f" ({route.confidence_score:.0f}/100)" if route.confidence_score is not None else ""),
     ]
+    for step in route.route:
+        if step.quote_age_minutes > OLD_PRICE_MINUTES:
+            lines += ["", f"📅 {_house_name(directory, step.house)} publicó su precio de {step.from_currency if step.to_currency == 'CLP' else step.to_currency} "
+                          f"{_ago(step.quote_age_minutes)}. Puede seguir igual: confirma por teléfono antes de ir."]
     if route.executable_now is False:
         lines += ["", "⏰ Alguna casa está cerrada ahora: oportunidad para más tarde."]
     if route.requires_verification:

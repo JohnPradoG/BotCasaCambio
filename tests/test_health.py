@@ -47,7 +47,7 @@ def test_house_health_states(session):
     text = health_text(houses, failing_readers(session, NOW), NOW)
     assert "1 de 3 funcionando." in text
     assert "❌ AFEX: no se lee desde 06/10 16:00" in text
-    assert "⚠️ Cambios Lyon: la web muestra precios del 02/10; no se usan por viejos" in text
+    assert "⚠️ Cambios Lyon: la web muestra precios del 02/10; se usan, pero hay que confirmarlos" in text
     assert "✅ Gamaex: leída 11:55" in text
     assert "• afex: no se encontraron cotizaciones" in text
 

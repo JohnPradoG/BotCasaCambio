@@ -170,7 +170,7 @@ def run_cycle(session: Session, settings: Settings, scrape: bool = True, notifie
     if scrape:
         collect_quotes(session, get_scrapers(settings.enabled_scraper_list, settings=settings), settings)
 
-    quotes = quotes_for_engine(session, settings.max_quote_usable_hours * 60)
+    quotes = quotes_for_engine(session, settings.max_quote_usable_hours * 60, settings.max_published_age_days * 1440)
     result.quotes_used = len(quotes)
     directory = house_directory(session)
     result.routes = find_best_routes(
