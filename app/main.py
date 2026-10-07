@@ -242,8 +242,52 @@ def make_command_poller():
         top=lambda: _analysis_text(scrape_manual=True, short=False),
         house_list=_house_list,
         prices=_prices_text,
+        near=_near_text,
     )
     return TelegramCommandPoller(settings, handlers)
+
+
+def _near_pairs():
+    from app.services.house_service import house_directory
+    from app.services.near_miss import closest_pairs
+    from app.services.opportunity_service import quotes_for_engine
+
+    settings = get_settings()
+    init_db()
+    with session_scope() as s:
+        quotes = quotes_for_engine(s, settings.max_quote_usable_hours * 60)
+        names = {slug: h.name for slug, h in house_directory(s).items()}
+    return closest_pairs(quotes, settings.initial_capital_clp, settings.safety_margin_percent, names)
+
+
+def _near_text() -> str:
+    from app.services.near_miss import pairs_text
+
+    return pairs_text(_near_pairs(), get_settings().initial_capital_clp, "🔎 Lo más cerca de un arbitraje ahora")
+
+
+def _near_miss_tick(notifier) -> None:
+    """Guarda el mejor momento del día por divisa y, desde NEAR_MISS_REPORT_TIME, manda el resumen una vez."""
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    from app.services.near_miss import daily_pairs, pairs_text, record
+
+    settings = get_settings()
+    now = datetime.now(ZoneInfo(settings.timezone))
+    state = record(DATA_DIR / "near_miss_today.json", _near_pairs(), now.date().isoformat(), now.strftime("%H:%M"))
+    if not settings.near_miss_report_time or now.strftime("%H:%M") < settings.near_miss_report_time:
+        return
+    marker = DATA_DIR / "near_miss_report_sent.txt"
+    try:
+        if marker.read_text().strip() == now.date().isoformat():
+            return
+    except OSError:
+        pass
+    text = pairs_text(daily_pairs(state), settings.initial_capital_clp,
+                      "📊 Resumen del día: lo más cerca que estuvo cada divisa")
+    if notifier.send(text + "\nEn cualquier momento: /cerca"):
+        marker.write_text(now.date().isoformat())
 
 
 def _price_request_text() -> str | None:
@@ -348,6 +392,10 @@ def cmd_loop(args) -> int:
             _maybe_send_price_request(make_notifier(get_settings()))
         except Exception:  # noqa: BLE001
             logger.exception("Error enviando el pedido diario de precios")
+        try:
+            _near_miss_tick(make_notifier(get_settings()))
+        except Exception:  # noqa: BLE001
+            logger.exception("Error con el resumen de rutas cercanas")
         if poller is None:
             time.sleep(interval)
         else:

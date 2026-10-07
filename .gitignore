@@ -12,3 +12,5 @@ logs/*
 data/maps_houses.json
 data/discovery_state.json
 data/casas_para_llamar.csv
+data/near_miss_today.json
+data/near_miss_report_sent.txt

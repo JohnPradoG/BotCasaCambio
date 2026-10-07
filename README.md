@@ -140,9 +140,9 @@ Toda la configuración vive en `.env` (ver `.env.example`, comentado). Un valor 
 | **Número de oportunidades mostradas** | `TOP_ROUTES` (o `--top`) | `3` |
 | **Número máximo de pasos** | `MAX_STEPS` (o `--steps`) | `5` |
 | **Costo de transporte** | `TRANSPORT_MODE`, `TRANSPORT_COST_PER_KM`, `TRANSPORT_FIXED_COST_PER_TRIP_CLP` | `public_transport`, `0`, `0` |
-| Ganancia mínima para alertar | `MIN_NET_PROFIT_CLP` | `10000` |
+| Ganancia mínima para alertar | `MIN_NET_PROFIT_CLP` | `0` (cualquier ganancia) |
 | Aviso si una ruta avisada baja su ganancia | `ALERT_DROP_PERCENT` (0 = no avisar) | `10` |
-| Margen de seguridad (% que se empeora cada tasa) | `SAFETY_MARGIN_PERCENT` | `0.5` |
+| Margen de seguridad (% que se empeora cada tasa) | `SAFETY_MARGIN_PERCENT` | `0` |
 | Antigüedad que baja la confianza | `MAX_QUOTE_AGE_MINUTES` | `10` |
 | Comisión estimada manual | `DEFAULT_COMMISSION_PERCENT`, `DEFAULT_COMMISSION_FIXED_CLP` | vacía (desconocida) |
 | Distancias por calle | `OSRM_URL` | vacío (línea recta × 1,3) |
@@ -182,12 +182,21 @@ escríbele al bot desde el chat configurado (los demás chats se ignoran):
 /casas                            nombres de casas registradas
 /lista                            planilla de casas con y sin precio, con teléfonos (también: python -m app.main export-houses --telegram)
 /precios                          mejores precios de hoy por divisa; /precios USD = todas las casas
+/cerca                            por divisa, la ruta más cercana a dar ganancia y cuánto le falta
 ```
 
 Cada precio queda en `data/manual_quotes.csv` con su hora (reemplaza el anterior de esa
 casa y divisa) y el bot responde con la mejor ruta. Sin Telegram:
 `python -m app.main add-quote gamaex USD 970 990 --source tel:+5622...`.
 Compra = lo que la casa te paga por 1 unidad; venta = lo que te cobra.
+
+### Qué tan cerca estuvo cada divisa
+
+Aunque no haya arbitraje, el bot guarda cada ciclo, por divisa, el mejor "comprar en la
+casa más barata y vender en la que más paga" (con el margen de seguridad, antes del metro)
+y a las `NEAR_MISS_REPORT_TIME` (19:00; vacío lo desactiva) manda el mejor momento del día.
+`/cerca` muestra lo de ahora. No cambia las alertas: sirve para decidir con datos si bajar
+márgenes o sumar casas.
 
 ### Dólar de mercado (Binance P2P / Buda)
 
