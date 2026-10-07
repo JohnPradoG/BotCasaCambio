@@ -244,6 +244,7 @@ def make_command_poller():
         prices=_prices_text,
         near=_near_text,
         health=lambda: _health_text(only_problems=False),
+        test=_test_text,
     )
     return TelegramCommandPoller(settings, handlers)
 
@@ -289,6 +290,20 @@ def _near_miss_tick(notifier) -> None:
                       "📊 Resumen del día: lo más cerca que estuvo cada divisa")
     if notifier.send(text + "\nEn cualquier momento: /cerca"):
         marker.write_text(now.date().isoformat())
+
+
+def _test_text() -> str:
+    from app.services.near_miss import _line
+    from app.services.self_test import example_alert, real_status
+
+    settings = get_settings()
+    init_db()
+    with session_scope() as s:
+        result = run_cycle(s, settings, scrape=False, save=False, alert=False)
+    worth = [r for r in result.routes if r.net_profit_clp >= settings.min_net_profit_clp]
+    pairs = _near_pairs()
+    return example_alert(settings) + "\n" + real_status(
+        len(worth), settings.min_net_profit_clp, settings.safety_margin_percent, _line(pairs[0]) if pairs else None)
 
 
 def _health_text(only_problems: bool) -> str | None:

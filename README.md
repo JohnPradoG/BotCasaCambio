@@ -185,6 +185,7 @@ escríbele al bot desde el chat configurado (los demás chats se ignoran):
 /precios                          mejores precios de hoy por divisa; /precios USD = todas las casas
 /cerca                            por divisa, la ruta más cercana a dar ganancia y cuánto le falta
 /estado                           qué casas con precio en la web se están leyendo bien
+/prueba                           alerta de ejemplo (casas ficticias, no se guarda) y cuántas rutas reales hay
 ```
 
 Cada precio queda en `data/manual_quotes.csv` con su hora (reemplaza el anterior de esa
