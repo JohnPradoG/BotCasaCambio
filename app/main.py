@@ -245,6 +245,7 @@ def make_command_poller():
         near=_near_text,
         health=lambda: _health_text(only_problems=False),
         test=_test_text,
+        update=_self_update,
     )
     return TelegramCommandPoller(settings, handlers)
 
@@ -290,6 +291,14 @@ def _near_miss_tick(notifier) -> None:
                       "📊 Resumen del día: lo más cerca que estuvo cada divisa")
     if notifier.send(text + "\nEn cualquier momento: /cerca"):
         marker.write_text(now.date().isoformat())
+
+
+def _self_update() -> tuple[str, bool]:
+    from app.config.settings import PROJECT_ROOT
+    from app.services.self_update import self_update
+
+    result = self_update(PROJECT_ROOT)
+    return result.text, result.restart
 
 
 def _test_text() -> str:

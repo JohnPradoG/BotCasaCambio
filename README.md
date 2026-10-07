@@ -186,6 +186,7 @@ escríbele al bot desde el chat configurado (los demás chats se ignoran):
 /cerca                            por divisa, la ruta más cercana a dar ganancia y cuánto le falta
 /estado                           qué casas con precio en la web se están leyendo bien
 /prueba                           alerta de ejemplo (casas ficticias, no se guarda) y cuántas rutas reales hay
+/actualizar                       git pull --ff-only + reinicio (systemd Restart=always); solo el chat autorizado
 ```
 
 Cada precio queda en `data/manual_quotes.csv` con su hora (reemplaza el anterior de esa
