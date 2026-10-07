@@ -11,6 +11,7 @@ ignora. Comandos:
 * ``/precios [divisa]``: precios guardados de hoy (resumen, o detalle de una divisa).
 * ``/cerca``: por divisa, la ruta más cercana a dar ganancia y cuánto le falta.
 * ``/estado``: qué casas con precio en la web se están leyendo bien.
+* ``/prueba``: alerta de ejemplo (casas ficticias) y estado real de las rutas.
 * ``/ayuda``.
 
 El bot nunca ejecuta operaciones: solo registra y calcula.
@@ -41,6 +42,7 @@ HELP = (
     "/precios: mejores precios de hoy; /precios USD: todas las casas para esa divisa\n"
     "/cerca: qué tan cerca está cada divisa de dar ganancia\n"
     "/estado: qué casas se están leyendo bien desde su web\n"
+    "/prueba: muestra una alerta de ejemplo y cuántas rutas reales hay ahora\n"
     "El bot solo calcula y avisa; nunca compra ni vende."
 )
 
@@ -56,6 +58,7 @@ class CommandHandlers:
     prices: Callable[[str | None], str] | None = None  # divisa o None → texto
     near: Callable[[], str] | None = None  # rutas más cercanas a dar ganancia
     health: Callable[[], str] | None = None  # estado de las casas leídas desde su web
+    test: Callable[[], str] | None = None  # alerta de ejemplo + estado real
 
 
 @dataclass
@@ -162,6 +165,8 @@ class TelegramCommandPoller:
                 return self.handlers.prices(currency)
             if command == "/cerca" and self.handlers.near:
                 return self.handlers.near()
+            if command == "/prueba" and self.handlers.test:
+                return self.handlers.test()
             if command == "/estado" and self.handlers.health:
                 return self.handlers.health()
             if command == "/lista" and self.handlers.house_list:
