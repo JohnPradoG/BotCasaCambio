@@ -1,6 +1,7 @@
-"""Diferencia de precio del USDT entre plataformas (Buda.com y Binance P2P).
+"""Diferencia de precio de criptomonedas entre plataformas (USDT, BTC, ETH, USDC…).
 
-Si una plataforma vende USDT (``ask``) más barato de lo que otra lo compra (``bid``),
+Para cada cripto de ``CRYPTO_ASSETS`` y cada plataforma de ``USDT_VENUES``: si una plataforma
+la vende (``ask``) más barata de lo que otra la compra (``bid``),
 comprar en la primera y vender en la segunda deja ganancia. Se calcula con el capital
 configurado y la comisión ``USDT_FEE_PERCENT`` por operación (0 por defecto: el aviso dice
 que es antes de comisiones). Solo detecta y avisa; nunca opera.
@@ -28,8 +29,17 @@ CACHE_SECONDS = 300
 _cache: tuple[float, dict[str, MarketRef]] | None = None
 
 
+def assets(settings: Settings) -> list[str]:
+    return [a.strip().upper() for a in settings.crypto_assets.split(",") if a.strip()] or ["USDT"]
+
+
+def ref_key(venue: str, asset: str) -> str:
+    """Clave de una lectura: ``buda`` para USDT (como antes), ``buda:BTC`` para las demás."""
+    return venue if asset == "USDT" else f"{venue}:{asset}"
+
+
 def fetch_all(settings: Settings, session: requests.Session | None = None, use_cache: bool = True) -> dict[str, MarketRef]:
-    """Precio de cada plataforma de ``USDT_VENUES`` que respondió."""
+    """Precio de cada cripto en cada plataforma de ``USDT_VENUES`` que respondió."""
     global _cache
     if use_cache and _cache and time.monotonic() - _cache[0] < CACHE_SECONDS:
         return _cache[1]
@@ -40,13 +50,14 @@ def fetch_all(settings: Settings, session: requests.Session | None = None, use_c
         if source is None:
             logger.warning("USDT_VENUES: plataforma desconocida %r", name)
             continue
-        try:
-            ref = source(settings, session)
-        except Exception as exc:  # noqa: BLE001 - una plataforma rota no detiene a las demás
-            logger.info("USDT %s no disponible: %s", name, exc)
-            continue
-        if ref:
-            refs[name] = ref
+        for asset in assets(settings):
+            try:
+                ref = source(settings, session, asset)
+            except Exception as exc:  # noqa: BLE001 - una plataforma rota no detiene a las demás
+                logger.info("%s en %s no disponible: %s", asset, name, exc)
+                continue
+            if ref:
+                refs[ref_key(name, asset)] = ref
     _cache = (time.monotonic(), refs)
     record(settings.usdt_history_file, refs)
     return refs
@@ -91,8 +102,9 @@ class Spread:
 
 
 def find_spreads(refs: dict[str, MarketRef], capital: float, fee_percent: float) -> list[Spread]:
-    """Todas las combinaciones comprar-en-A / vender-en-B (también A=B) ordenadas por ganancia."""
-    spreads = [Spread(a, b, capital, fee_percent) for a in refs.values() for b in refs.values()]
+    """Combinaciones comprar-en-A / vender-en-B de la misma cripto (también A=B), por ganancia."""
+    spreads = [Spread(a, b, capital, fee_percent) for a in refs.values() for b in refs.values()
+               if a.asset == b.asset]
     return sorted(spreads, key=lambda s: -s.profit_clp)
 
 
@@ -107,30 +119,37 @@ def _rate(value: float) -> str:
 
 def spread_text(s: Spread) -> str:
     fees = f"con comisión {s.fee_percent:g} % por operación" if s.fee_percent else "antes de comisiones"
-    return "\n".join([
-        "💱 DIFERENCIA USDT ENTRE PLATAFORMAS",
-        f"Comprar USDT en {s.buy_at.source} a {_rate(s.buy_at.ask)}",
+    asset = s.buy_at.asset
+    lines = [
+        f"💱 DIFERENCIA {asset} ENTRE PLATAFORMAS",
+        f"Comprar {asset} en {s.buy_at.source} a {_rate(s.buy_at.ask)}",
         f"Venderlo en {s.sell_at.source} a {_rate(s.sell_at.bid)}",
         f"Con {_clp(s.capital)[1:]}: {_clp(s.profit_clp)} ({fees}).",
-        "Ojo: en P2P revisa la reputación del comprador y que el pago llegue antes de liberar.",
-        f"Fuentes: {s.buy_at.url} · {s.sell_at.url}",
-    ])
+    ]
+    if s.buy_at.source != s.sell_at.source:
+        lines.append(f"Ojo: pasar {asset} de una plataforma a otra cobra comisión de retiro y puede tardar.")
+    lines += ["Ojo: en P2P revisa la reputación del comprador y que el pago llegue antes de liberar.",
+              f"Fuentes: {s.buy_at.url} · {s.sell_at.url}"]
+    return "\n".join(lines)
 
 
 def venues_text(refs: dict[str, MarketRef], settings: Settings) -> str:
-    """``/usdt``: precio de cada plataforma configurada, o que no respondió, y la mejor diferencia."""
+    """``/usdt``: precio de cada cripto en cada plataforma, cuáles no respondieron y la mejor diferencia."""
     names = [s.strip().lower() for s in settings.usdt_venues.split(",") if s.strip()]
     if not names:
-        return "La comparación de USDT está desactivada (USDT_VENUES vacío)."
-    lines = ["💱 USDT/CLP ahora (compras a / vendes a):"]
-    for name in names:
-        r = refs.get(name)
-        lines.append(f"✅ {r.source}: {_rate(r.ask)} / {_rate(r.bid)}" if r else f"❌ {name}: no respondió")
-    best = next((s for s in find_spreads(refs, settings.initial_capital_clp, settings.usdt_fee_percent)
-                 if s.buy_at is not s.sell_at), None)
-    if best:
-        lines.append(f"Mejor combinación: comprar en {best.buy_at.source} y vender en {best.sell_at.source}: "
-                     f"{_clp(best.profit_clp)} con {_clp(best.capital)[1:]}")
+        return "La comparación de cripto está desactivada (USDT_VENUES vacío)."
+    lines = ["💱 Cripto en pesos ahora (compras a / vendes a)"]
+    for asset in assets(settings):
+        lines += ["", f"{asset}:"]
+        for name in names:
+            r = refs.get(ref_key(name, asset))
+            lines.append(f"✅ {r.source}: {_rate(r.ask)} / {_rate(r.bid)}" if r else f"❌ {name}: no respondió")
+        best = next((s for s in find_spreads({k: r for k, r in refs.items() if r.asset == asset},
+                                             settings.initial_capital_clp, settings.usdt_fee_percent)
+                     if s.buy_at is not s.sell_at), None)
+        if best:
+            lines.append(f"Mejor: comprar en {best.buy_at.source} y vender en {best.sell_at.source}: "
+                         f"{_clp(best.profit_clp)} con {_clp(best.capital)[1:]}")
     return "\n".join(lines)
 
 
@@ -140,12 +159,12 @@ def check_usdt_spreads(refs: dict[str, MarketRef], settings: Settings, notifier,
     best = next(iter(find_spreads(refs, settings.initial_capital_clp, settings.usdt_fee_percent)), None)
     if best is None or best.profit_clp <= max(settings.min_net_profit_clp, 0):
         return []
-    key = f"{best.buy_at.source}>{best.sell_at.source}"
+    key = f"{best.buy_at.asset}:{best.buy_at.source}>{best.sell_at.source}"
     last = state.get(key)
     if last is not None and now - last < timedelta(hours=settings.usdt_alert_cooldown_hours):
         return []
     if not notifier.send(spread_text(best)):
         return []
     state[key] = now
-    logger.info("Aviso USDT: %s %+.0f CLP", key, best.profit_clp)
+    logger.info("Aviso cripto: %s %+.0f CLP", key, best.profit_clp)
     return [key]

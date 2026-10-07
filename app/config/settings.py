@@ -58,6 +58,8 @@ class Settings(BaseSettings):
     # Diferencia de USDT entre plataformas (comprar en una, vender en otra); vacío = desactivado.
     usdt_venues: str = "buda,binance,cryptomkt,bybit,okx"
     # Comisión por operación (%) en esas plataformas; 0 = el aviso dice "antes de comisiones".
+    # Criptos a comparar entre esas plataformas (John, 2026-10-07: "puede ser cualquier cripto").
+    crypto_assets: str = "USDT,BTC,ETH,USDC"
     usdt_fee_percent: float = Field(0, ge=0)
     usdt_alert_cooldown_hours: float = Field(2, ge=0)
     # Plataformas cuya API de precios se consulta aunque su robots.txt diga que no
