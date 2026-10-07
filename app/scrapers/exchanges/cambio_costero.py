@@ -1,12 +1,13 @@
 """Cambio Costero (https://www.ccostero.cl): tienda WooCommerce con un precio por divisa.
 
-Ese precio es el de **venta** de la casa (lo que cobra al cliente que compra divisa):
-el sitio dice "Si deseas vendernos tus divisas debes acudir directamente a nuestras
-oficinas", así que el precio de compra no está publicado y queda en ``None``.
+Ese precio es el de **venta** de la casa (lo que cobra al cliente que compra divisa).
 La página aclara que los precios son referenciales.
 
 El carrusel de portada muestra además otro número junto a algunas divisas (p. ej.
-"USD 970 · $988"), sin etiqueta: no se usa como compra porque la página no dice qué es.
+"USD 970 · $988"), sin etiqueta. John confirmó el 2026-10-07 que es el precio de
+**compra** de la casa (lo que paga al cliente que le vende la divisa). Se usa solo si
+es menor que la venta; si no, la compra queda en ``None``. En el listado sin ese número
+la compra también queda en ``None``.
 
 Estado: estructura verificada con el HTML real descargado desde el VPS el 2026-10-03
 (carruseles ``.wcps-items`` del plugin WooCommerce Products Slider).
@@ -23,10 +24,20 @@ from app.scrapers.normalization import RateParseError, parse_rate
 from app.scrapers.registry import register
 
 
-def parse_woocommerce_prices(html: str) -> dict[str, float]:
-    """{divisa: precio} de un listado de productos WooCommerce (título + precio)."""
+def _excerpt_rate(product) -> float | None:
+    node = product.select_one(".wcps-items-excerpt")
+    if node is None:
+        return None
+    try:
+        return parse_rate(node.get_text(" ", strip=True), decimal_separator=",") or None
+    except RateParseError:
+        return None
+
+
+def parse_woocommerce_prices(html: str) -> dict[str, tuple[float, float | None]]:
+    """{divisa: (venta, compra o None)} de un listado de productos WooCommerce (título + precio)."""
     soup = BeautifulSoup(html, "html.parser")
-    prices: dict[str, float] = {}
+    prices: dict[str, tuple[float, float | None]] = {}
     # Listado clásico de WooCommerce o carrusel "WooCommerce Products Slider" (.wcps-items).
     for product in soup.select("li.product, div.product, .products .product, .wcps-items"):
         title = (product.select_one(".wcps-items-title, .woocommerce-loop-product__title, h2, h3")
@@ -42,7 +53,8 @@ def parse_woocommerce_prices(html: str) -> dict[str, float]:
         except RateParseError:
             continue
         if value:
-            prices[currency] = value
+            buy = _excerpt_rate(product)
+            prices[currency] = (value, buy if buy is not None and buy < value else None)
     return prices
 
 
@@ -60,8 +72,10 @@ class CambioCosteroScraper(BaseScraper):
         if not prices:
             raise StructureChangedError("no se encontraron productos con precio en ccostero.cl")
         return [
-            NormalizedQuote(exchange_house="cambio_costero", currency=cur, buy_rate=None, sell_rate=value,
+            NormalizedQuote(exchange_house="cambio_costero", currency=cur, buy_rate=buy, sell_rate=sell,
                             source_url=self.source_url,
-                            notes="precio de venta referencial; la compra no se publica (solo en oficinas)")
-            for cur, value in prices.items()
+                            notes="precios referenciales; compra = número sin etiqueta del carrusel "
+                                  "(confirmado por John 2026-10-07)" if buy is not None
+                                  else "precio de venta referencial; la compra no se publica")
+            for cur, (sell, buy) in prices.items()
         ]

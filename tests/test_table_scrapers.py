@@ -120,8 +120,11 @@ def test_cambio_costero_reads_wcps_carousel(settings):
     html = (FIXTURES / "cambio_costero_wcps.html").read_text(encoding="utf-8")
     q = by_currency(CambioCosteroScraper(settings).parse(html))
     assert len(q) == 17 and "ORO" not in q  # 18 productos, uno es la moneda de oro
-    assert (q["USD"].buy_rate, q["USD"].sell_rate) == (None, 988)  # el "970" sin etiqueta no se usa
+    # el número sin etiqueta es la compra (confirmado por John 2026-10-07)
+    assert (q["USD"].buy_rate, q["USD"].sell_rate) == (970, 988)
+    assert (q["EUR"].buy_rate, q["ARS"].buy_rate, q["BRL"].buy_rate, q["CAD"].buy_rate) == (1110, 0.61, 185, 640)
     assert q["EUR"].sell_rate == 1130 and q["COP"].sell_rate == 0.35 and q["NZD"].sell_rate == 543
+    assert q["COP"].buy_rate is None  # sin número en el carrusel: la compra no se conoce
 
 
 def test_quote_with_old_published_time_is_not_used(engine, settings):
