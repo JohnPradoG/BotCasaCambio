@@ -126,6 +126,10 @@ class Settings(BaseSettings):
     price_request_currencies: str = "USD,EUR,BRL,ARS,PEN"
     # Hora local del resumen diario "lo más cerca de un arbitraje"; vacío = no enviar.
     near_miss_report_time: str | None = "19:00"
+    # Hora local del aviso diario de casas que dejaron de dar precios; vacío = no enviar.
+    health_report_time: str | None = "11:00"
+    # Una casa leída de su web "falla" si no se lee hace más de estas horas.
+    health_stale_hours: float = Field(2, gt=0)
     scraper_timeout_seconds: float = Field(15, gt=0)
     scraper_retries: int = Field(2, ge=0)
     scraper_backoff_seconds: float = Field(2, ge=0)

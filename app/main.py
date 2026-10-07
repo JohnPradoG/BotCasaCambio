@@ -243,6 +243,7 @@ def make_command_poller():
         house_list=_house_list,
         prices=_prices_text,
         near=_near_text,
+        health=lambda: _health_text(only_problems=False),
     )
     return TelegramCommandPoller(settings, handlers)
 
@@ -287,6 +288,41 @@ def _near_miss_tick(notifier) -> None:
     text = pairs_text(daily_pairs(state), settings.initial_capital_clp,
                       "📊 Resumen del día: lo más cerca que estuvo cada divisa")
     if notifier.send(text + "\nEn cualquier momento: /cerca"):
+        marker.write_text(now.date().isoformat())
+
+
+def _health_text(only_problems: bool) -> str | None:
+    from app.services.health import failing_readers, health_text, house_health
+    from app.models.quote import utcnow
+
+    settings = get_settings()
+    init_db()
+    now = utcnow()
+    with session_scope() as s:
+        houses = house_health(s, now, settings.health_stale_hours, settings.max_quote_usable_hours)
+        failing = failing_readers(s, now)
+    return health_text(houses, failing, now, settings.timezone, only_problems=only_problems)
+
+
+def _maybe_send_health(notifier) -> None:
+    """Una vez al día, desde HEALTH_REPORT_TIME (hora local), avisa qué casas dejaron de dar precios."""
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    settings = get_settings()
+    if not settings.health_report_time:
+        return
+    now = datetime.now(ZoneInfo(settings.timezone))
+    marker = DATA_DIR / "health_report_sent.txt"
+    try:
+        if marker.read_text().strip() == now.date().isoformat():
+            return
+    except OSError:
+        pass
+    if now.strftime("%H:%M") < settings.health_report_time:
+        return
+    text = _health_text(only_problems=True)
+    if text is None or notifier.send(text):  # sin problemas: no se envía nada ese día
         marker.write_text(now.date().isoformat())
 
 
@@ -396,6 +432,10 @@ def cmd_loop(args) -> int:
             _near_miss_tick(make_notifier(get_settings()))
         except Exception:  # noqa: BLE001
             logger.exception("Error con el resumen de rutas cercanas")
+        try:
+            _maybe_send_health(make_notifier(get_settings()))
+        except Exception:  # noqa: BLE001
+            logger.exception("Error revisando el estado de las casas")
         if poller is None:
             time.sleep(interval)
         else:

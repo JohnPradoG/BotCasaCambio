@@ -183,6 +183,7 @@ escríbele al bot desde el chat configurado (los demás chats se ignoran):
 /lista                            planilla de casas con y sin precio, con teléfonos (también: python -m app.main export-houses --telegram)
 /precios                          mejores precios de hoy por divisa; /precios USD = todas las casas
 /cerca                            por divisa, la ruta más cercana a dar ganancia y cuánto le falta
+/estado                           qué casas con precio en la web se están leyendo bien
 ```
 
 Cada precio queda en `data/manual_quotes.csv` con su hora (reemplaza el anterior de esa
@@ -197,6 +198,13 @@ casa más barata y vender en la que más paga" (con el margen de seguridad, ante
 y a las `NEAR_MISS_REPORT_TIME` (19:00; vacío lo desactiva) manda el mejor momento del día.
 `/cerca` muestra lo de ahora. No cambia las alertas: sirve para decidir con datos si bajar
 márgenes o sumar casas.
+
+### Casas que dejan de dar precios
+
+`/estado` lista las casas que el bot leyó de su web en la última semana: ✅ leída hace
+poco, ❌ no se lee hace más de `HEALTH_STALE_HOURS` (2), ⚠️ la web muestra precios
+publicados hace más de `MAX_QUOTE_USABLE_HOURS` (no se usan). A las `HEALTH_REPORT_TIME`
+(11:00; vacío lo desactiva) llega un aviso solo si alguna casa tiene problema.
 
 ### Dólar de mercado (Binance P2P / Buda)
 
