@@ -57,7 +57,9 @@ def load_recorded(path: str | Path, since: datetime) -> list[Snapshot]:
     for row in rows:
         try:
             at = datetime.fromisoformat(row["at"])
-            ref = MarketRef(row["source"], bid=float(row["bid"]), ask=float(row["ask"]), url=row["url"], at=at)
+            asset = row["venue"].split(":", 1)[1] if ":" in row["venue"] else "USDT"
+            ref = MarketRef(row["source"], bid=float(row["bid"]), ask=float(row["ask"]), url=row["url"], at=at,
+                            asset=asset)
         except (KeyError, TypeError, ValueError):
             continue
         if at.tzinfo is None:
@@ -175,9 +177,9 @@ def result_text(title: str, r: Result, zone: ZoneInfo, note: str = "") -> list[s
         at, s = r.best
         pairs: dict[str, int] = {}
         for _, w in r.winners:
-            key = f"{w.buy_at.source} → {w.sell_at.source}"
+            key = f"{w.buy_at.asset}: {w.buy_at.source} → {w.sell_at.source}"
             pairs[key] = pairs.get(key, 0) + 1
-        lines.append(f"Mejor: {at.astimezone(zone):%d/%m %H:%M}, comprar en {s.buy_at.source} a {s.buy_at.ask:,.2f} "
+        lines.append(f"Mejor: {at.astimezone(zone):%d/%m %H:%M}, comprar {s.buy_at.asset} en {s.buy_at.source} a {s.buy_at.ask:,.2f} "
                      f"y vender en {s.sell_at.source} a {s.sell_at.bid:,.2f}: +{_clp(s.profit_clp)}")
         avg = sum(w.profit_clp for _, w in r.winners) / len(r.winners)
         lines.append(f"Ganancia promedio cuando hubo: +{_clp(avg)}")
@@ -197,7 +199,7 @@ def backtest_text(settings: Settings, days: int, now: datetime | None = None,
     lines = [f"📈 Backtesting USDT, últimos {days} días, con {_clp(capital)} ({fees})", ""]
 
     recorded = load_recorded(settings.usdt_history_file, since)
-    lines += result_text("1) Precios que guardó el bot (todas las plataformas):", evaluate(recorded, capital, fee),
+    lines += result_text("1) Precios que guardó el bot (todas las plataformas y criptos):", evaluate(recorded, capital, fee),
                          zone, "Esta es la prueba fiel; crece cada día que el bot corre.")
     lines.append("")
 

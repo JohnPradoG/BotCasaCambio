@@ -36,7 +36,7 @@ def test_alert_cooldown_and_no_profit():
     settings = Settings(_env_file=None, usdt_alert_cooldown_hours=2)
     state, n = {}, Notifier()
     refs = {"buda": BUDA, "binance": BINANCE}
-    assert us.check_usdt_spreads(refs, settings, n, NOW, state) == ["Buda.com>Binance P2P"]
+    assert us.check_usdt_spreads(refs, settings, n, NOW, state) == ["USDT:Buda.com>Binance P2P"]
     assert us.check_usdt_spreads(refs, settings, n, NOW + timedelta(hours=1), state) == []
     assert us.check_usdt_spreads(refs, settings, n, NOW + timedelta(hours=3), state)
     assert len(n.sent) == 2
@@ -48,21 +48,44 @@ def test_alert_cooldown_and_no_profit():
 def test_fetch_all_skips_failing_venue(monkeypatch, tmp_path):
     import requests
 
-    def boom(settings, session):
+    def boom(settings, session, asset="USDT"):
         raise requests.ConnectionError("x")
 
     monkeypatch.setitem(us.SOURCES, "binance", boom)
-    monkeypatch.setitem(us.SOURCES, "buda", lambda settings, session: BUDA)
-    monkeypatch.setitem(us.SOURCES, "cryptomkt", lambda settings, session: session.missing)  # error raro
+    monkeypatch.setitem(us.SOURCES, "buda", lambda settings, session, asset="USDT": BUDA)
+    monkeypatch.setitem(us.SOURCES, "cryptomkt", lambda settings, session, asset="USDT": session.missing)  # error raro
     history = tmp_path / "usdt.csv"
-    refs = us.fetch_all(Settings(_env_file=None, usdt_history_file=str(history)), session=object(), use_cache=False)
+    refs = us.fetch_all(Settings(_env_file=None, usdt_history_file=str(history), crypto_assets="USDT"), session=object(), use_cache=False)
     assert list(refs) == ["buda"]
     lines = history.read_text().splitlines()
     assert lines[0] == "at,venue,source,bid,ask,url" and ",buda,Buda.com,975.0,978.0," in lines[1]
 
 
 def test_venues_text_shows_missing_platforms():
-    settings = Settings(_env_file=None, usdt_venues="buda,binance,okx")
+    settings = Settings(_env_file=None, usdt_venues="buda,binance,okx", crypto_assets="USDT")
     text = us.venues_text({"buda": BUDA, "binance": BINANCE}, settings)
     assert "✅ Buda.com: 978,00 / 975,00" in text and "❌ okx: no respondió" in text
-    assert "comprar en Buda.com y vender en Binance P2P: +$7.157" in text
+    assert "Mejor: comprar en Buda.com y vender en Binance P2P: +$7.157" in text
+
+
+def test_each_crypto_is_compared_only_with_itself(monkeypatch):
+    btc_buda = MarketRef("Buda.com", bid=60_000_000, ask=60_100_000, url="u", asset="BTC")
+    btc_binance = MarketRef("Binance P2P", bid=60_500_000, ask=60_600_000, url="u", asset="BTC")
+    refs = {"buda": BUDA, "binance": BINANCE, "buda:BTC": btc_buda, "binance:BTC": btc_binance}
+    spreads = us.find_spreads(refs, 1_000_000, 0)
+    assert all(s.buy_at.asset == s.sell_at.asset for s in spreads)
+    best_btc = next(s for s in spreads if s.buy_at.asset == "BTC")
+    assert (best_btc.buy_at.source, best_btc.sell_at.source) == ("Buda.com", "Binance P2P")
+    text = us.spread_text(best_btc)
+    assert "DIFERENCIA BTC" in text and "comisión de retiro" in text
+
+    calls = []
+
+    def fake(settings, session, asset="USDT"):
+        calls.append(asset)
+        return MarketRef("Buda.com", 1, 2, "u", asset=asset) if asset != "ETH" else None
+
+    monkeypatch.setitem(us.SOURCES, "buda", fake)
+    got = us.fetch_all(Settings(_env_file=None, usdt_venues="buda", crypto_assets="USDT,BTC,ETH", usdt_history_file=""),
+                       session=object(), use_cache=False)
+    assert calls == ["USDT", "BTC", "ETH"] and list(got) == ["buda", "buda:BTC"]

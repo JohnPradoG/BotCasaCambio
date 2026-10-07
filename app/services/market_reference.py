@@ -46,6 +46,7 @@ class MarketRef:
     ask: float  # lo que pagas por 1 USDT (tú compras)
     url: str
     at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    asset: str = "USDT"
 
     @property
     def mid(self) -> float:
@@ -66,8 +67,8 @@ def _allowed(url: str, settings: Settings, name: str = "") -> bool:
     return parser.can_fetch(settings.scraper_user_agent, url)
 
 
-def _binance_side(session: requests.Session, settings: Settings, trade_type: str) -> float | None:
-    body = {"asset": "USDT", "fiat": "CLP", "tradeType": trade_type, "page": 1, "rows": 5,
+def _binance_side(session: requests.Session, settings: Settings, trade_type: str, asset: str = "USDT") -> float | None:
+    body = {"asset": asset, "fiat": "CLP", "tradeType": trade_type, "page": 1, "rows": 5,
             "payTypes": [], "publisherType": None, "transAmount": str(int(settings.initial_capital_clp))}
     resp = session.post(BINANCE_URL, json=body, timeout=settings.scraper_timeout_seconds,
                         headers={"User-Agent": settings.scraper_user_agent})
@@ -77,22 +78,24 @@ def _binance_side(session: requests.Session, settings: Settings, trade_type: str
     return prices[0] if prices else None  # el primer anuncio es el mejor precio para ese lado
 
 
-def from_binance(settings: Settings, session: requests.Session) -> MarketRef | None:
+def from_binance(settings: Settings, session: requests.Session, asset: str = "USDT") -> MarketRef | None:
     if not _allowed(BINANCE_URL, settings, "binance"):
         logger.info("robots.txt de Binance P2P no permite la consulta; se omite")
         return None
-    ask = _binance_side(session, settings, "BUY")  # anuncios donde tú compras USDT
-    bid = _binance_side(session, settings, "SELL")  # anuncios donde tú vendes USDT
+    ask = _binance_side(session, settings, "BUY", asset)  # anuncios donde tú compras
+    bid = _binance_side(session, settings, "SELL", asset)  # anuncios donde tú vendes
     if ask is None or bid is None:
         return None
-    return MarketRef("Binance P2P", bid=bid, ask=ask, url="https://p2p.binance.com/es/trade/all-payments/USDT?fiat=CLP")
+    return MarketRef("Binance P2P", bid=bid, ask=ask, asset=asset,
+                     url=f"https://p2p.binance.com/es/trade/all-payments/{asset}?fiat=CLP")
 
 
-def from_buda(settings: Settings, session: requests.Session) -> MarketRef | None:
-    if not _allowed(BUDA_URL, settings, "buda"):
+def from_buda(settings: Settings, session: requests.Session, asset: str = "USDT") -> MarketRef | None:
+    url = BUDA_URL.replace("usdt-clp", f"{asset.lower()}-clp")
+    if not _allowed(url, settings, "buda"):
         logger.info("robots.txt de Buda no permite la consulta; se omite")
         return None
-    resp = session.get(BUDA_URL, timeout=settings.scraper_timeout_seconds,
+    resp = session.get(url, timeout=settings.scraper_timeout_seconds,
                        headers={"User-Agent": settings.scraper_user_agent})
     resp.raise_for_status()
     ticker = (resp.json() or {}).get("ticker") or {}
@@ -100,14 +103,15 @@ def from_buda(settings: Settings, session: requests.Session) -> MarketRef | None
         bid, ask = float(ticker["max_bid"][0]), float(ticker["min_ask"][0])
     except (KeyError, IndexError, TypeError, ValueError):
         return None
-    return MarketRef("Buda.com", bid=bid, ask=ask, url="https://www.buda.com/chile")
+    return MarketRef("Buda.com", bid=bid, ask=ask, asset=asset, url="https://www.buda.com/chile")
 
 
-def from_cryptomkt(settings: Settings, session: requests.Session) -> MarketRef | None:
-    if not _allowed(CRYPTOMKT_URL, settings, "cryptomkt"):
+def from_cryptomkt(settings: Settings, session: requests.Session, asset: str = "USDT") -> MarketRef | None:
+    url = CRYPTOMKT_URL.replace("USDTCLP", f"{asset.upper()}CLP")
+    if not _allowed(url, settings, "cryptomkt"):
         logger.info("robots.txt de CryptoMarket no permite la consulta; se omite")
         return None
-    resp = session.get(CRYPTOMKT_URL, timeout=settings.scraper_timeout_seconds,
+    resp = session.get(url, timeout=settings.scraper_timeout_seconds,
                        headers={"User-Agent": settings.scraper_user_agent})
     resp.raise_for_status()
     ticker = resp.json() or {}
@@ -115,11 +119,11 @@ def from_cryptomkt(settings: Settings, session: requests.Session) -> MarketRef |
         bid, ask = float(ticker["bid"]), float(ticker["ask"])
     except (KeyError, TypeError, ValueError):  # null cuando no hay ofertas
         return None
-    return MarketRef("CryptoMarket", bid=bid, ask=ask, url="https://www.cryptomkt.com/es/")
+    return MarketRef("CryptoMarket", bid=bid, ask=ask, asset=asset, url="https://www.cryptomkt.com/es/")
 
 
-def _bybit_side(session: requests.Session, settings: Settings, side: str) -> float | None:
-    body = {"userId": "", "tokenId": "USDT", "currencyId": "CLP", "payment": [], "side": side, "size": "5",
+def _bybit_side(session: requests.Session, settings: Settings, side: str, asset: str = "USDT") -> float | None:
+    body = {"userId": "", "tokenId": asset, "currencyId": "CLP", "payment": [], "side": side, "size": "5",
             "page": "1", "amount": str(int(settings.initial_capital_clp)), "authMaker": False, "canTrade": False}
     resp = session.post(BYBIT_URL, json=body, timeout=settings.scraper_timeout_seconds,
                         headers={"User-Agent": settings.scraper_user_agent})
@@ -129,19 +133,20 @@ def _bybit_side(session: requests.Session, settings: Settings, side: str) -> flo
     return prices[0] if prices else None  # el primer anuncio es el mejor para ese lado
 
 
-def from_bybit(settings: Settings, session: requests.Session) -> MarketRef | None:
+def from_bybit(settings: Settings, session: requests.Session, asset: str = "USDT") -> MarketRef | None:
     if not _allowed(BYBIT_URL, settings, "bybit"):
         logger.info("robots.txt de Bybit no permite la consulta; se omite")
         return None
-    ask = _bybit_side(session, settings, "1")  # "1": anuncios donde tú compras USDT
-    bid = _bybit_side(session, settings, "0")  # "0": anuncios donde tú vendes USDT
+    ask = _bybit_side(session, settings, "1", asset)  # "1": anuncios donde tú compras
+    bid = _bybit_side(session, settings, "0", asset)  # "0": anuncios donde tú vendes
     if ask is None or bid is None:
         return None
-    return MarketRef("Bybit P2P", bid=bid, ask=ask, url="https://www.bybit.com/fiat/trade/otc/?actionType=1&token=USDT&fiat=CLP")
+    return MarketRef("Bybit P2P", bid=bid, ask=ask, asset=asset,
+                     url=f"https://www.bybit.com/fiat/trade/otc/?actionType=1&token={asset}&fiat=CLP")
 
 
-def _okx_side(session: requests.Session, settings: Settings, side: str) -> float | None:
-    params = {"quoteCurrency": "clp", "baseCurrency": "usdt", "side": side, "paymentMethod": "all",
+def _okx_side(session: requests.Session, settings: Settings, side: str, asset: str = "USDT") -> float | None:
+    params = {"quoteCurrency": "clp", "baseCurrency": asset.lower(), "side": side, "paymentMethod": "all",
               "userType": "all", "quoteMinAmountPerOrder": str(int(settings.initial_capital_clp))}
     resp = session.get(OKX_URL, params=params, timeout=settings.scraper_timeout_seconds,
                        headers={"User-Agent": settings.scraper_user_agent})
@@ -153,15 +158,16 @@ def _okx_side(session: requests.Session, settings: Settings, side: str) -> float
     return min(prices) if side == "sell" else max(prices)
 
 
-def from_okx(settings: Settings, session: requests.Session) -> MarketRef | None:
+def from_okx(settings: Settings, session: requests.Session, asset: str = "USDT") -> MarketRef | None:
     if not _allowed(OKX_URL, settings, "okx"):
         logger.info("robots.txt de OKX no permite la consulta; se omite")
         return None
-    ask = _okx_side(session, settings, "sell")  # anuncios que venden USDT: tú compras
-    bid = _okx_side(session, settings, "buy")  # anuncios que compran USDT: tú vendes
+    ask = _okx_side(session, settings, "sell", asset)  # anuncios que venden: tú compras
+    bid = _okx_side(session, settings, "buy", asset)  # anuncios que compran: tú vendes
     if ask is None or bid is None:
         return None
-    return MarketRef("OKX P2P", bid=bid, ask=ask, url="https://www.okx.com/es-la/p2p-markets/clp/buy-usdt")
+    return MarketRef("OKX P2P", bid=bid, ask=ask, asset=asset,
+                     url=f"https://www.okx.com/es-la/p2p-markets/clp/buy-{asset.lower()}")
 
 
 SOURCES = {"binance": from_binance, "buda": from_buda, "cryptomkt": from_cryptomkt, "bybit": from_bybit,
