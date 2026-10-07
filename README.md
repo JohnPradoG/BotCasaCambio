@@ -217,6 +217,15 @@ comprar USDT en una y venderlo en otra deja ganancia con el capital
 desactiva). Comisión por operación en `USDT_FEE_PERCENT` (0 = el aviso dice "antes de
 comisiones"); aviso como máximo cada `USDT_ALERT_COOLDOWN_HOURS` (2) por par. Solo avisa.
 
+Las tres plataformas piden en su robots.txt no leer sus API. John autorizó el 2026-10-07
+leerlas igual (solo precios públicos, unas pocas consultas cada ciclo):
+`ROBOTS_EXEMPT_APIS=binance,buda,cryptomkt`. Las casas de cambio siguen respetando robots.txt.
+
+`/backtest [días]` (o `python -m app.main backtest-usdt --days 7`) cuenta cuántas veces hubo
+ganancia: (1) con las lecturas que el bot guarda en `USDT_HISTORY_FILE` (fiel, incluye
+Binance) y (2) con la historia pública de Buda (operaciones) y CryptoMarket (velas de 15 min),
+que es aproximada porque son precios de operaciones pasadas, no ofertas.
+
 ### Dólar de mercado (Binance P2P / Buda)
 
 `/precios` y las alertas muestran el precio del USDT/CLP como referencia del dólar de

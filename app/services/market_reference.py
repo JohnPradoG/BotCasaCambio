@@ -10,7 +10,9 @@ Fuentes, en el orden de ``MARKET_REFERENCE`` (la primera que responda):
 * ``buda``: ticker público de Buda.com (API documentada) para USDT-CLP.
 * ``cryptomkt``: ticker público de CryptoMarket (API v3 documentada, sin clave) para USDT/CLP.
 
-Se respeta robots.txt de cada sitio; si no lo permite o falla, se pasa a la siguiente.
+Se respeta robots.txt de cada sitio, salvo las API de ``ROBOTS_EXEMPT_APIS`` (John autorizó
+el 2026-10-07 leer los precios de Binance, Buda y CryptoMarket aunque su robots.txt lo pida).
+Si una fuente no responde, se pasa a la siguiente.
 El resultado se guarda unos minutos para no consultar en cada mensaje.
 """
 
@@ -47,8 +49,12 @@ class MarketRef:
         return (self.bid + self.ask) / 2
 
 
-def _allowed(url: str, settings: Settings) -> bool:
-    if not settings.respect_robots_txt:
+def _exempt(name: str, settings: Settings) -> bool:
+    return name in {s.strip().lower() for s in settings.robots_exempt_apis.split(",") if s.strip()}
+
+
+def _allowed(url: str, settings: Settings, name: str = "") -> bool:
+    if not settings.respect_robots_txt or (name and _exempt(name, settings)):
         return True
     base = "/".join(url.split("/")[:3])
     parser = _robots_for(base, settings.scraper_user_agent, settings.scraper_timeout_seconds)
@@ -69,7 +75,7 @@ def _binance_side(session: requests.Session, settings: Settings, trade_type: str
 
 
 def from_binance(settings: Settings, session: requests.Session) -> MarketRef | None:
-    if not _allowed(BINANCE_URL, settings):
+    if not _allowed(BINANCE_URL, settings, "binance"):
         logger.info("robots.txt de Binance P2P no permite la consulta; se omite")
         return None
     ask = _binance_side(session, settings, "BUY")  # anuncios donde tú compras USDT
@@ -80,7 +86,7 @@ def from_binance(settings: Settings, session: requests.Session) -> MarketRef | N
 
 
 def from_buda(settings: Settings, session: requests.Session) -> MarketRef | None:
-    if not _allowed(BUDA_URL, settings):
+    if not _allowed(BUDA_URL, settings, "buda"):
         logger.info("robots.txt de Buda no permite la consulta; se omite")
         return None
     resp = session.get(BUDA_URL, timeout=settings.scraper_timeout_seconds,
@@ -95,7 +101,7 @@ def from_buda(settings: Settings, session: requests.Session) -> MarketRef | None
 
 
 def from_cryptomkt(settings: Settings, session: requests.Session) -> MarketRef | None:
-    if not _allowed(CRYPTOMKT_URL, settings):
+    if not _allowed(CRYPTOMKT_URL, settings, "cryptomkt"):
         logger.info("robots.txt de CryptoMarket no permite la consulta; se omite")
         return None
     resp = session.get(CRYPTOMKT_URL, timeout=settings.scraper_timeout_seconds,

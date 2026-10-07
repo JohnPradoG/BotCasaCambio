@@ -62,7 +62,7 @@ def test_none_when_no_source_answers():
 
 
 def test_robots_disallow_skips_source(monkeypatch):
-    monkeypatch.setattr(mr, "_allowed", lambda url, settings: "buda" in url)
+    monkeypatch.setattr(mr, "_allowed", lambda url, settings, name="": "buda" in url)
     session = FakeSession({"BUY": 981.0, "SELL": 982.0}, BUDA)
     ref = mr.get_reference(_settings(respect_robots_txt=True), session, use_cache=False)
     assert ref.source == "Buda.com"
@@ -149,7 +149,14 @@ def test_cryptomkt_without_offers_is_none():
 
 
 def test_cryptomkt_robots_disallow(monkeypatch):
-    monkeypatch.setattr(mr, "_allowed", lambda url, settings: False)
+    monkeypatch.setattr(mr, "_allowed", lambda url, settings, name="": False)
     session = TickerSession({"ask": "990", "bid": "985"})
     assert mr.from_cryptomkt(_settings(), session) is None
     assert session.urls == []
+
+
+def test_exempt_api_skips_robots(monkeypatch):
+    monkeypatch.setattr(mr, "_robots_for", lambda *a: None)  # robots ilegible = no permitido
+    s = _settings(respect_robots_txt=True)
+    assert mr._allowed(mr.BUDA_URL, s, "buda") is True
+    assert mr._allowed(mr.BUDA_URL, _settings(respect_robots_txt=True, robots_exempt_apis=""), "buda") is False
