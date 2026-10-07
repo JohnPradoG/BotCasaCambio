@@ -124,6 +124,8 @@ class Settings(BaseSettings):
     # Pedido diario de precios (enlaces de WhatsApp por Telegram) a casas sin precio reciente.
     price_request_time: str | None = None  # hora local, p. ej. "09:30"; vacío = no enviar
     price_request_currencies: str = "USD,EUR,BRL,ARS,PEN"
+    # Hora local del resumen diario "lo más cerca de un arbitraje"; vacío = no enviar.
+    near_miss_report_time: str | None = "19:00"
     scraper_timeout_seconds: float = Field(15, gt=0)
     scraper_retries: int = Field(2, ge=0)
     scraper_backoff_seconds: float = Field(2, ge=0)

@@ -9,6 +9,7 @@ ignora. Comandos:
 * ``/casas``: nombres que se pueden usar en ``/precio``.
 * ``/lista``: planilla con todas las casas, con y sin precio, y sus teléfonos.
 * ``/precios [divisa]``: precios guardados de hoy (resumen, o detalle de una divisa).
+* ``/cerca``: por divisa, la ruta más cercana a dar ganancia y cuánto le falta.
 * ``/ayuda``.
 
 El bot nunca ejecuta operaciones: solo registra y calcula.
@@ -37,6 +38,7 @@ HELP = (
     "/casas: nombres de casas para /precio\n"
     "/lista: planilla de casas con y sin precio, con teléfonos para llamar\n"
     "/precios: mejores precios de hoy; /precios USD: todas las casas para esa divisa\n"
+    "/cerca: qué tan cerca está cada divisa de dar ganancia\n"
     "El bot solo calcula y avisa; nunca compra ni vende."
 )
 
@@ -50,6 +52,7 @@ class CommandHandlers:
     top: Callable[[], str]
     house_list: Callable[[], tuple[Path, str]] | None = None  # (archivo CSV, resumen)
     prices: Callable[[str | None], str] | None = None  # divisa o None → texto
+    near: Callable[[], str] | None = None  # rutas más cercanas a dar ganancia
 
 
 @dataclass
@@ -154,6 +157,8 @@ class TelegramCommandPoller:
                 if arg and not currency:
                     return f"No reconozco la divisa {arg!r}. Ejemplo: /precios USD"
                 return self.handlers.prices(currency)
+            if command == "/cerca" and self.handlers.near:
+                return self.handlers.near()
             if command == "/lista" and self.handlers.house_list:
                 path, text = self.handlers.house_list()
                 return text if self._send_document(path, "Casas de cambio") else f"{text}\n⚠️ No se pudo enviar la planilla."
