@@ -12,7 +12,9 @@ quedan como ``PENDING_VERIFICATION`` y con menos confianza, porque nadie revisó
 esa casa sus columnas. Solo se aceptan columnas con etiqueta clara de compra/venta; una
 ambigua se descarta (``classify_rate_label``).
 
-Un sitio sin precios se vuelve a revisar cada ``DISCOVERY_RETRY_HOURS``. El estado queda en
+Un sitio sin precios se vuelve a revisar cada ``DISCOVERY_RETRY_HOURS``; uno que sí publicó
+precios en la última semana se sigue revisando en cada ciclo aunque falle una vez (una caída
+pasajera no lo deja un día sin leer). El estado queda en
 ``data/discovery_state.json``. Respeta robots.txt; un sitio caído no detiene a los demás.
 """
 
@@ -33,6 +35,7 @@ from app.services.house_service import load_all_houses
 
 _PRICE_WORDS = ("precio", "cotiza", "valores", "divisa", "tasa", "moneda")
 MAX_SUBPAGES = 3
+KEEP_TRYING = timedelta(days=7)  # tras encontrar precios, se reintenta en cada ciclo esta cantidad de tiempo
 # Redes sociales y enlaces de contacto: no son webs de precios (y suelen prohibir robots).
 _SOCIAL = ("instagram.com", "facebook.com", "fb.com", "wa.me", "whatsapp.com", "linktr.ee", "tiktok.com",
            "twitter.com", "x.com", "linkedin.com", "youtube.com", "google.com", "goo.gl", "business.site")
@@ -117,7 +120,10 @@ class WebDiscoveryScraper(BaseScraper):
         quotes: list[NormalizedQuote] = []
         for house in self.candidates():
             prev = state.get(house.slug, {})
-            if not prev.get("found") and prev.get("last_try"):
+            last_found = prev.get("last_found")
+            had_prices = last_found and now - datetime.fromisoformat(last_found) < KEEP_TRYING
+            old_format = prev and "last_found" not in prev  # estado de antes de este cambio: probar una vez
+            if not prev.get("found") and not had_prices and not old_format and prev.get("last_try"):
                 if now - datetime.fromisoformat(prev["last_try"]) < retry:
                     continue
             website = house.website if "://" in house.website else f"https://{house.website}"
@@ -127,7 +133,8 @@ class WebDiscoveryScraper(BaseScraper):
             except Exception as exc:  # noqa: BLE001 - un sitio caído no detiene a los demás
                 rates, url, error = [], website, f"{type(exc).__name__}: {exc}"
                 self.log.info("%s: %s", house.slug, error)
-            state[house.slug] = {"last_try": now.isoformat(), "found": len(rates), "url": url, "error": error}
+            state[house.slug] = {"last_try": now.isoformat(), "found": len(rates), "url": url, "error": error,
+                                 "last_found": now.isoformat() if rates else last_found}
             for r in rates:
                 quotes.append(NormalizedQuote(
                     exchange_house=house.slug, currency=r.currency, buy_rate=r.buy_rate, sell_rate=r.sell_rate,

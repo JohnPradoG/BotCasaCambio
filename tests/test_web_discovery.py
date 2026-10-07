@@ -84,3 +84,17 @@ def test_price_links_same_site_only():
     html = ('<a href="https://otro.cl/precios">x</a><a href="/cotizaciones">Cotizaciones</a>'
             '<a href="/contacto">Contacto</a><a href="https://www.a.cl/valores-del-dia">hoy</a>')
     assert price_links(html, "https://a.cl/") == ["https://a.cl/cotizaciones", "https://www.a.cl/valores-del-dia"]
+
+
+def test_site_that_had_prices_is_retried_every_cycle(tmp_path, settings):
+    s = setup(tmp_path, settings)
+    WebDiscoveryScraper(s, session=Sess({"https://a.cl/": TABLE})).run()
+    # una caída pasajera: a.cl no responde
+    WebDiscoveryScraper(s, session=Sess({})).run()
+    state = json.loads((tmp_path / "discovery_state.json").read_text())
+    assert state["con_tabla"]["found"] == 0 and state["con_tabla"]["last_found"]
+    # el ciclo siguiente lo vuelve a pedir (no espera DISCOVERY_RETRY_HOURS) y lo lee
+    sess = Sess({"https://a.cl/": TABLE})
+    result = WebDiscoveryScraper(s, session=sess).run()
+    assert "https://a.cl/" in sess.calls and "https://c.cl/" not in sess.calls
+    assert {q.exchange_house for q in result.quotes} == {"con_tabla"}
