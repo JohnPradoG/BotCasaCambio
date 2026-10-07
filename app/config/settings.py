@@ -57,6 +57,11 @@ class Settings(BaseSettings):
     # Comisión por operación (%) en esas plataformas; 0 = el aviso dice "antes de comisiones".
     usdt_fee_percent: float = Field(0, ge=0)
     usdt_alert_cooldown_hours: float = Field(2, ge=0)
+    # Plataformas cuya API de precios se consulta aunque su robots.txt diga que no
+    # (autorizado por John el 2026-10-07; solo lectura de precios públicos, nunca opera).
+    robots_exempt_apis: str = "binance,buda,cryptomkt"
+    # Cada lectura de USDT se guarda aquí para el backtesting (/backtest).
+    usdt_history_file: str = str(DATA_DIR / "usdt_prices.csv")
 
     # --- Comisiones estimadas manuales (si la casa no publica la suya) ---
     default_commission_percent: float | None = None

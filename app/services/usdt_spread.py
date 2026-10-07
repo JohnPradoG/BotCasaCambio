@@ -11,10 +11,12 @@ no responde, simplemente no se compara; nunca se inventa un precio.
 
 from __future__ import annotations
 
+import csv
 import logging
 import time
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from pathlib import Path
 
 import requests
 
@@ -40,13 +42,35 @@ def fetch_all(settings: Settings, session: requests.Session | None = None, use_c
             continue
         try:
             ref = source(settings, session)
-        except (requests.RequestException, ValueError) as exc:
+        except Exception as exc:  # noqa: BLE001 - una plataforma rota no detiene a las demás
             logger.info("USDT %s no disponible: %s", name, exc)
             continue
         if ref:
             refs[name] = ref
     _cache = (time.monotonic(), refs)
+    record(settings.usdt_history_file, refs)
     return refs
+
+
+HISTORY_FIELDS = ["at", "venue", "source", "bid", "ask", "url"]
+
+
+def record(path: str | Path, refs: dict[str, MarketRef]) -> None:
+    """Agrega cada lectura al historial (CSV) para el backtesting. Si falla, solo se avisa en el log."""
+    if not path or not refs:
+        return
+    path = Path(path)
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        new = not path.exists()
+        with path.open("a", newline="") as f:
+            writer = csv.writer(f)
+            if new:
+                writer.writerow(HISTORY_FIELDS)
+            for name, r in refs.items():
+                writer.writerow([r.at.isoformat(timespec="seconds"), name, r.source, r.bid, r.ask, r.url])
+    except OSError as exc:
+        logger.warning("No se pudo guardar el historial USDT: %s", exc)
 
 
 @dataclass

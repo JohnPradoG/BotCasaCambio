@@ -15,3 +15,4 @@ data/casas_para_llamar.csv
 data/near_miss_today.json
 data/near_miss_report_sent.txt
 data/health_report_sent.txt
+data/usdt_prices.csv

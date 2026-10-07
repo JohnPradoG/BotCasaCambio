@@ -246,6 +246,7 @@ def make_command_poller():
         health=lambda: _health_text(only_problems=False),
         test=_test_text,
         update=_self_update,
+        backtest=_backtest_text,
     )
     return TelegramCommandPoller(settings, handlers)
 
@@ -291,6 +292,17 @@ def _near_miss_tick(notifier) -> None:
                       "📊 Resumen del día: lo más cerca que estuvo cada divisa")
     if notifier.send(text + "\nEn cualquier momento: /cerca"):
         marker.write_text(now.date().isoformat())
+
+
+def _backtest_text(days: int) -> str:
+    from app.services.usdt_backtest import backtest_text
+
+    return backtest_text(get_settings(), days)
+
+
+def cmd_backtest_usdt(args) -> int:
+    print(_backtest_text(args.days))
+    return 0
 
 
 def _self_update() -> tuple[str, bool]:
@@ -680,6 +692,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--source", default="manual:pizarra", help="p. ej. tel:+56..., manual:pizarra")
     p.add_argument("--notes")
     p.set_defaults(func=cmd_add_quote)
+    p = sub.add_parser("backtest-usdt", help="diferencias de USDT entre plataformas en los últimos días")
+    p.add_argument("--days", type=int, default=7)
+    p.set_defaults(func=cmd_backtest_usdt)
     sub.add_parser("telegram-chat-id").set_defaults(func=cmd_telegram_chat_id)
     sub.add_parser("telegram-test").set_defaults(func=cmd_telegram_test)
     p = sub.add_parser("dashboard")

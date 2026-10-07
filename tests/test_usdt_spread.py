@@ -45,7 +45,7 @@ def test_alert_cooldown_and_no_profit():
     assert us.check_usdt_spreads({}, settings, Notifier(), NOW, {}) == []
 
 
-def test_fetch_all_skips_failing_venue(monkeypatch):
+def test_fetch_all_skips_failing_venue(monkeypatch, tmp_path):
     import requests
 
     def boom(settings, session):
@@ -53,5 +53,9 @@ def test_fetch_all_skips_failing_venue(monkeypatch):
 
     monkeypatch.setitem(us.SOURCES, "binance", boom)
     monkeypatch.setitem(us.SOURCES, "buda", lambda settings, session: BUDA)
-    refs = us.fetch_all(Settings(_env_file=None), session=object(), use_cache=False)
+    monkeypatch.setitem(us.SOURCES, "cryptomkt", lambda settings, session: session.missing)  # error raro
+    history = tmp_path / "usdt.csv"
+    refs = us.fetch_all(Settings(_env_file=None, usdt_history_file=str(history)), session=object(), use_cache=False)
     assert list(refs) == ["buda"]
+    lines = history.read_text().splitlines()
+    assert lines[0] == "at,venue,source,bid,ask,url" and ",buda,Buda.com,975.0,978.0," in lines[1]

@@ -12,6 +12,7 @@ ignora. Comandos:
 * ``/cerca``: por divisa, la ruta más cercana a dar ganancia y cuánto le falta.
 * ``/estado``: qué casas con precio en la web se están leyendo bien.
 * ``/prueba``: alerta de ejemplo (casas ficticias) y estado real de las rutas.
+* ``/backtest [días]``: cuántas veces hubo diferencia de USDT entre plataformas.
 * ``/actualizar``: baja la última versión desde GitHub y reinicia el bot.
 * ``/ayuda``.
 
@@ -44,6 +45,7 @@ HELP = (
     "/cerca: qué tan cerca está cada divisa de dar ganancia\n"
     "/estado: qué casas se están leyendo bien desde su web\n"
     "/prueba: muestra una alerta de ejemplo y cuántas rutas reales hay ahora\n"
+    "/backtest: ganancia que hubo entre Buda, Binance y CryptoMarket (ej. /backtest 7)\n"
     "/actualizar: baja la última versión del bot y lo reinicia\n"
     "El bot solo calcula y avisa; nunca compra ni vende."
 )
@@ -62,6 +64,7 @@ class CommandHandlers:
     health: Callable[[], str] | None = None  # estado de las casas leídas desde su web
     test: Callable[[], str] | None = None  # alerta de ejemplo + estado real
     update: Callable[[], tuple[str, bool]] | None = None  # (respuesta, reiniciar)
+    backtest: Callable[[int], str] | None = None  # días → resumen
 
 
 @dataclass
@@ -183,6 +186,12 @@ class TelegramCommandPoller:
                 return self.handlers.prices(currency)
             if command == "/cerca" and self.handlers.near:
                 return self.handlers.near()
+            if command == "/backtest" and self.handlers.backtest:
+                arg = text.split()[1] if len(text.split()) > 1 else "7"
+                if not arg.isdigit() or not 1 <= int(arg) <= 30:
+                    return "Uso: /backtest 7 (días, de 1 a 30)"
+                self._send(f"⏳ Revisando {arg} días…")
+                return self.handlers.backtest(int(arg))
             if command == "/prueba" and self.handlers.test:
                 return self.handlers.test()
             if command == "/estado" and self.handlers.health:
