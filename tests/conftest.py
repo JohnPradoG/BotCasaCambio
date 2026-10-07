@@ -34,3 +34,4 @@ def session(engine):
 def no_market_reference(monkeypatch):
     """Los tests no consultan Binance/Buda; el test de la referencia la prueba con sesiones falsas."""
     monkeypatch.setattr("app.services.cycle_service.get_reference", lambda settings: None)
+    monkeypatch.setattr("app.services.cycle_service.fetch_all", lambda settings: {})

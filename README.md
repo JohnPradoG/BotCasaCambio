@@ -209,6 +209,13 @@ poco, ❌ no se lee hace más de `HEALTH_STALE_HOURS` (2), ⚠️ la web muestra
 publicados hace más de `MAX_QUOTE_USABLE_HOURS` (no se usan). A las `HEALTH_REPORT_TIME`
 (11:00; vacío lo desactiva) llega un aviso solo si alguna casa tiene problema.
 
+### Diferencia de USDT entre plataformas
+
+Con los mismos precios de Buda.com y Binance P2P, el bot revisa si comprar USDT en una y
+venderlo en la otra deja ganancia con el capital (`USDT_VENUES=buda,binance`; vacío lo
+desactiva). Comisión por operación en `USDT_FEE_PERCENT` (0 = el aviso dice "antes de
+comisiones"); aviso como máximo cada `USDT_ALERT_COOLDOWN_HOURS` (2) por par. Solo avisa.
+
 ### Dólar de mercado (Binance P2P / Buda)
 
 `/precios` y las alertas muestran el precio del USDT/CLP como referencia del dólar de

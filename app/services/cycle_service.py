@@ -19,6 +19,7 @@ from app.scrapers.registry import get_scrapers
 from app.services.arbitrage_engine import Route, SearchStats, find_best_routes, reprice_route
 from app.services.house_service import house_directory, sync_all_houses
 from app.services.market_reference import find_gaps, gaps_text, get_reference
+from app.services.usdt_spread import check_usdt_spreads, fetch_all
 from app.services.opportunity_service import quotes_for_engine, save_routes
 from app.services.quote_service import collect_quotes
 from app.services.verification_service import expire_old
@@ -32,6 +33,7 @@ class CycleResult:
     alerted: list[Route] = field(default_factory=list)
     drop_alerts: list[str] = field(default_factory=list)  # firmas de rutas cuya baja se avisó
     market_alerts: list[str] = field(default_factory=list)  # "casa:lado" avisados fuera de mercado
+    usdt_alerts: list[str] = field(default_factory=list)  # "A>B" diferencias USDT avisadas
     quotes_used: int = 0
     expired: int = 0
     stats: SearchStats = field(default_factory=SearchStats)
@@ -117,6 +119,17 @@ def check_drops(session: Session, quotes, settings: Settings, directory: dict, n
 
 
 _market_alerted: dict[str, datetime] = {}  # "casa:lado" -> último aviso (en memoria)
+_usdt_alerted: dict[str, datetime] = {}  # "A>B" -> último aviso (en memoria)
+
+
+def _usdt_spreads(settings: Settings, notifier) -> list[str]:
+    if not settings.usdt_venues.strip():
+        return []
+    try:
+        return check_usdt_spreads(fetch_all(settings), settings, notifier, utcnow(), _usdt_alerted)
+    except Exception:  # opcional: nunca debe cortar el ciclo
+        logger.exception("No se pudo revisar la diferencia de USDT")
+        return []
 
 
 def _market_ref(settings: Settings):
@@ -182,6 +195,7 @@ def run_cycle(session: Session, settings: Settings, scrape: bool = True, notifie
             notifier = notifier or make_notifier(settings)
             result.drop_alerts = check_drops(session, quotes, settings, directory, notifier)
             result.market_alerts = check_market_gaps(quotes, _market_ref(settings), settings, directory, notifier)
+            result.usdt_alerts = _usdt_spreads(settings, notifier)
         result.expired = expire_old(session, settings.opportunity_ttl_minutes)
     session.flush()
     return result
