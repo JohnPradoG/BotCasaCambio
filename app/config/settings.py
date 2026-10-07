@@ -100,6 +100,10 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     log_file: str = str(LOGS_DIR / "bot.log")
     loop_interval_seconds: int = Field(180, ge=30)
+    # Intervalo más corto en la franja de apertura (hora local "HH:MM-HH:MM"; vacío = no se usa),
+    # cuando las casas cambian sus precios y una puede quedar desfasada de otra.
+    fast_loop_window: str | None = "09:00-10:30"
+    fast_loop_interval_seconds: int = Field(60, ge=30)
     dashboard_host: str = "127.0.0.1"
     dashboard_port: int = 8000
     # Si se define, el panel exige ?token=... o la cabecera X-Token (recomendado si se expone a Internet).
