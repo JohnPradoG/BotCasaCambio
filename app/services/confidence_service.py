@@ -40,6 +40,10 @@ def assess(route, settings: Settings) -> Confidence:
         penalty(min(40, 12 * len(stale)), f"{len(stale)} cotización(es) con más de {settings.max_quote_age_minutes} min "
                                           f"(la más antigua {oldest:.0f} min)")
         cap = min(cap, 74)  # una cotización antigua nunca es confianza ALTA
+    old = [s for s in route.route if s.quote_age_minutes > settings.max_quote_usable_hours * 60]
+    if old:  # precio publicado hace días: puede seguir igual, pero hay que confirmarlo
+        reasons.append(f"{len(old)} precio(s) publicados hace más de {settings.max_quote_usable_hours:g} h")
+        cap = min(cap, 49)
 
     # Distancia / tiempo: más tiempo, más riesgo de que cambie la cotización.
     if route.estimated_minutes is None:

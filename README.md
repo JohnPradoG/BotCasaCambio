@@ -206,7 +206,8 @@ márgenes o sumar casas.
 
 `/estado` lista las casas que el bot leyó de su web en la última semana: ✅ leída hace
 poco, ❌ no se lee hace más de `HEALTH_STALE_HOURS` (2), ⚠️ la web muestra precios
-publicados hace más de `MAX_QUOTE_USABLE_HOURS` (no se usan). A las `HEALTH_REPORT_TIME`
+publicados hace más de `MAX_QUOTE_USABLE_HOURS` (se usan con aviso de confirmar, hasta
+`MAX_PUBLISHED_AGE_DAYS`, 14). A las `HEALTH_REPORT_TIME`
 (11:00; vacío lo desactiva) llega un aviso solo si alguna casa tiene problema.
 
 ### Diferencia de USDT entre plataformas

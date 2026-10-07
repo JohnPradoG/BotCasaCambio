@@ -309,3 +309,19 @@ def test_drop_alert_disabled(engine, cycle_settings):
     with session_scope(engine) as s:
         assert run_cycle(s, settings, notifier=notifier).drop_alerts == []
     assert len(notifier.sent) == 1
+
+
+def test_old_published_price_is_used_with_warning():
+    from datetime import timedelta
+
+    from app.models.quote import utcnow
+
+    old = utcnow() - timedelta(days=5)
+    quotes = [NormalizedQuote("a", "USD", 930.0, 950.0, "test://", timestamp_source=old).validate(),
+              NormalizedQuote("b", "USD", 980.0, 1000.0, "test://").validate()]
+    best = find_best_routes(quotes, initial_amount=1_000_000, settings=Settings(_env_file=None, safety_margin_percent=0),
+                            directory=directory())[0]
+    assert round(best.net_profit_clp) == 31_579  # misma ganancia: la antigüedad no cambia el ranking
+    assert best.confidence == "LOW"
+    text = format_alert([best], directory(), 1_000_000)
+    assert "📅 Casa A publicó su precio de USD hace 5 días. Puede seguir igual: confirma por teléfono antes de ir." in text

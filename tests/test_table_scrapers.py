@@ -137,10 +137,13 @@ def test_quote_with_old_published_time_is_not_used(engine, settings):
 
     now = utcnow()
     with session_scope(engine) as s:
-        for house, ts in (("old", now - timedelta(days=31)), ("new", now - timedelta(hours=2))):
+        for house, ts in (("old", now - timedelta(days=31)), ("days", now - timedelta(days=5)),
+                          ("new", now - timedelta(hours=2))):
             save_quote(s, NormalizedQuote(house, "USD", 970, 990, "test://", timestamp_source=ts).validate(), None)
         assert [q.exchange_house for q in quotes_for_engine(s, 24 * 60)] == ["new"]
-        assert len(quotes_for_engine(s, None)) == 2  # sin límite, se ve todo el historial
+        # precios publicados hace unos días se usan (pueden no haber cambiado); hace un mes, no
+        assert sorted(q.exchange_house for q in quotes_for_engine(s, 24 * 60, 14 * 1440)) == ["days", "new"]
+        assert len(quotes_for_engine(s, None)) == 3  # sin límite, se ve todo el historial
 
 
 class _Resp:

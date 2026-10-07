@@ -2,7 +2,7 @@
 
 Se vigilan las casas que el bot leyó de su web (no a mano) en los últimos días. Una casa
 tiene problema si no se lee hace más de ``stale_hours`` horas, o si la web muestra
-precios publicados hace más de ``MAX_QUOTE_USABLE_HOURS`` (el motor no los usa).
+precios publicados hace más de ``MAX_QUOTE_USABLE_HOURS`` (se usan con aviso de confirmar).
 """
 
 from __future__ import annotations
@@ -90,7 +90,7 @@ def health_line(h: HouseHealth, zone: ZoneInfo, now: datetime) -> str:
         return f"❌ {h.house}: no se lee desde {_when(h.last_read, zone, now)}"
     if h.state == OLD_PRICES:
         return (f"⚠️ {h.house}: la web muestra precios del {h.published.astimezone(zone).strftime('%d/%m')}; "
-                "no se usan por viejos")
+                "se usan, pero hay que confirmarlos")
     return f"✅ {h.house}: leída {_when(h.last_read, zone, now)}"
 
 

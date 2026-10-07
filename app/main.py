@@ -259,7 +259,7 @@ def _near_pairs():
     settings = get_settings()
     init_db()
     with session_scope() as s:
-        quotes = quotes_for_engine(s, settings.max_quote_usable_hours * 60)
+        quotes = quotes_for_engine(s, settings.max_quote_usable_hours * 60, settings.max_published_age_days * 1440)
         names = {slug: h.name for slug, h in house_directory(s).items()}
     return closest_pairs(quotes, settings.initial_capital_clp, settings.safety_margin_percent, names)
 
