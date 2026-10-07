@@ -222,6 +222,8 @@ Estas plataformas piden en su robots.txt no leer sus API. John autorizó el 2026
 leerlas igual (solo precios públicos, unas pocas consultas cada ciclo):
 `ROBOTS_EXEMPT_APIS=binance,buda,cryptomkt,bybit,okx`. Las casas de cambio siguen respetando robots.txt.
 
+`/usdt` muestra el precio de cada plataforma ahora y cuáles no responden.
+
 `/backtest [días]` (o `python -m app.main backtest-usdt --days 7`) cuenta cuántas veces hubo
 ganancia: (1) con las lecturas que el bot guarda en `USDT_HISTORY_FILE` (fiel, incluye
 Binance) y (2) con la historia pública de Buda (operaciones) y CryptoMarket (velas de 15 min),

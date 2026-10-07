@@ -247,6 +247,7 @@ def make_command_poller():
         test=_test_text,
         update=_self_update,
         backtest=_backtest_text,
+        usdt=_usdt_text,
     )
     return TelegramCommandPoller(settings, handlers)
 
@@ -292,6 +293,13 @@ def _near_miss_tick(notifier) -> None:
                       "📊 Resumen del día: lo más cerca que estuvo cada divisa")
     if notifier.send(text + "\nEn cualquier momento: /cerca"):
         marker.write_text(now.date().isoformat())
+
+
+def _usdt_text() -> str:
+    from app.services.usdt_spread import fetch_all, venues_text
+
+    settings = get_settings()
+    return venues_text(fetch_all(settings, use_cache=False), settings)
 
 
 def _backtest_text(days: int) -> str:
