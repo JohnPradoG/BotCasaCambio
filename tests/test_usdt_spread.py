@@ -59,3 +59,10 @@ def test_fetch_all_skips_failing_venue(monkeypatch, tmp_path):
     assert list(refs) == ["buda"]
     lines = history.read_text().splitlines()
     assert lines[0] == "at,venue,source,bid,ask,url" and ",buda,Buda.com,975.0,978.0," in lines[1]
+
+
+def test_venues_text_shows_missing_platforms():
+    settings = Settings(_env_file=None, usdt_venues="buda,binance,okx")
+    text = us.venues_text({"buda": BUDA, "binance": BINANCE}, settings)
+    assert "✅ Buda.com: 978,00 / 975,00" in text and "❌ okx: no respondió" in text
+    assert "comprar en Buda.com y vender en Binance P2P: +$7.157" in text

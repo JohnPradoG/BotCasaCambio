@@ -117,6 +117,23 @@ def spread_text(s: Spread) -> str:
     ])
 
 
+def venues_text(refs: dict[str, MarketRef], settings: Settings) -> str:
+    """``/usdt``: precio de cada plataforma configurada, o que no respondió, y la mejor diferencia."""
+    names = [s.strip().lower() for s in settings.usdt_venues.split(",") if s.strip()]
+    if not names:
+        return "La comparación de USDT está desactivada (USDT_VENUES vacío)."
+    lines = ["💱 USDT/CLP ahora (compras a / vendes a):"]
+    for name in names:
+        r = refs.get(name)
+        lines.append(f"✅ {r.source}: {_rate(r.ask)} / {_rate(r.bid)}" if r else f"❌ {name}: no respondió")
+    best = next((s for s in find_spreads(refs, settings.initial_capital_clp, settings.usdt_fee_percent)
+                 if s.buy_at is not s.sell_at), None)
+    if best:
+        lines.append(f"Mejor combinación: comprar en {best.buy_at.source} y vender en {best.sell_at.source}: "
+                     f"{_clp(best.profit_clp)} con {_clp(best.capital)[1:]}")
+    return "\n".join(lines)
+
+
 def check_usdt_spreads(refs: dict[str, MarketRef], settings: Settings, notifier, now: datetime,
                        state: dict[str, datetime]) -> list[str]:
     """Avisa la mejor diferencia con ganancia > ``MIN_NET_PROFIT_CLP``, una vez cada ``USDT_ALERT_COOLDOWN_HOURS``."""
