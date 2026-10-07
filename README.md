@@ -148,6 +148,7 @@ Toda la configuración vive en `.env` (ver `.env.example`, comentado). Un valor 
 | Distancias por calle | `OSRM_URL` | vacío (línea recta × 1,3) |
 | Punto de partida | `ORIGIN_LAT`, `ORIGIN_LON` | vacío (parte en la 1.ª casa) |
 | Frecuencia del ciclo | `LOOP_INTERVAL_SECONDS` | `180` |
+| Frecuencia en la franja de apertura | `FAST_LOOP_WINDOW` / `FAST_LOOP_INTERVAL_SECONDS` | `09:00-10:30` / `60` |
 | Scrapers activos | `ENABLED_SCRAPERS` | `manual_csv` |
 | Base de datos | `DATABASE_URL` | SQLite en `data/arbitraje.db` |
 

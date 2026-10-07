@@ -412,8 +412,20 @@ def _maybe_discover_maps(notifier) -> None:
     notifier.send(summary_text(report))
 
 
+def loop_interval(settings, now) -> int:
+    """Segundos de espera entre ciclos: más corto dentro de FAST_LOOP_WINDOW (hora local)."""
+    window = (settings.fast_loop_window or "").replace(" ", "")
+    if "-" in window:
+        start, end = window.split("-", 1)
+        if start <= now.strftime("%H:%M") < end:
+            return min(settings.fast_loop_interval_seconds, settings.loop_interval_seconds)
+    return settings.loop_interval_seconds
+
+
 def cmd_loop(args) -> int:
-    interval = args.interval or get_settings().loop_interval_seconds
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
     poller = make_command_poller()  # con Telegram configurado, atiende /precio mientras espera
     while True:
         try:
@@ -436,6 +448,8 @@ def cmd_loop(args) -> int:
             _maybe_send_health(make_notifier(get_settings()))
         except Exception:  # noqa: BLE001
             logger.exception("Error revisando el estado de las casas")
+        settings = get_settings()
+        interval = args.interval or loop_interval(settings, datetime.now(ZoneInfo(settings.timezone)))
         if poller is None:
             time.sleep(interval)
         else:
