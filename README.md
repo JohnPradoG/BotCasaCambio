@@ -211,15 +211,15 @@ publicados hace más de `MAX_QUOTE_USABLE_HOURS` (no se usan). A las `HEALTH_REP
 
 ### Diferencia de USDT entre plataformas
 
-Con los precios de Buda.com, Binance P2P y CryptoMarket (ticker público), el bot revisa si
+Con los precios de Buda.com, Binance P2P, CryptoMarket (ticker público), Bybit P2P y OKX P2P, el bot revisa si
 comprar USDT en una y venderlo en otra deja ganancia con el capital
-(`USDT_VENUES=buda,binance,cryptomkt`; vacío lo
+(`USDT_VENUES=buda,binance,cryptomkt,bybit,okx`; vacío lo
 desactiva). Comisión por operación en `USDT_FEE_PERCENT` (0 = el aviso dice "antes de
 comisiones"); aviso como máximo cada `USDT_ALERT_COOLDOWN_HOURS` (2) por par. Solo avisa.
 
-Las tres plataformas piden en su robots.txt no leer sus API. John autorizó el 2026-10-07
+Estas plataformas piden en su robots.txt no leer sus API. John autorizó el 2026-10-07
 leerlas igual (solo precios públicos, unas pocas consultas cada ciclo):
-`ROBOTS_EXEMPT_APIS=binance,buda,cryptomkt`. Las casas de cambio siguen respetando robots.txt.
+`ROBOTS_EXEMPT_APIS=binance,buda,cryptomkt,bybit,okx`. Las casas de cambio siguen respetando robots.txt.
 
 `/backtest [días]` (o `python -m app.main backtest-usdt --days 7`) cuenta cuántas veces hubo
 ganancia: (1) con las lecturas que el bot guarda en `USDT_HISTORY_FILE` (fiel, incluye

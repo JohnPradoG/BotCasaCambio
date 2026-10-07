@@ -45,7 +45,7 @@ HELP = (
     "/cerca: qué tan cerca está cada divisa de dar ganancia\n"
     "/estado: qué casas se están leyendo bien desde su web\n"
     "/prueba: muestra una alerta de ejemplo y cuántas rutas reales hay ahora\n"
-    "/backtest: ganancia que hubo entre Buda, Binance y CryptoMarket (ej. /backtest 7)\n"
+    "/backtest: ganancia que hubo entre plataformas de USDT (ej. /backtest 7)\n"
     "/actualizar: baja la última versión del bot y lo reinicia\n"
     "El bot solo calcula y avisa; nunca compra ni vende."
 )

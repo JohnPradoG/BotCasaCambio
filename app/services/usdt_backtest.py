@@ -8,7 +8,7 @@ Dos fuentes de historia, nunca inventada:
 * **Historia pública** de Buda (operaciones) y CryptoMarket (velas de 15 min) para los días
   anteriores. Es aproximada: son precios a los que alguien operó, no la oferta que había,
   y CryptoMarket no dice de qué lado fue, así que se usa el cierre para comprar y vender.
-  Binance P2P no publica historia.
+  Binance, Bybit y OKX P2P no publican historia.
 
 Para cada momento se toma la mejor combinación comprar-en-A / vender-en-B con el capital y
 ``USDT_FEE_PERCENT``, igual que el aviso. Solo calcula; nunca opera.
@@ -197,7 +197,7 @@ def backtest_text(settings: Settings, days: int, now: datetime | None = None,
     lines = [f"📈 Backtesting USDT, últimos {days} días, con {_clp(capital)} ({fees})", ""]
 
     recorded = load_recorded(settings.usdt_history_file, since)
-    lines += result_text("1) Precios que guardó el bot (Buda, Binance, CryptoMarket):", evaluate(recorded, capital, fee),
+    lines += result_text("1) Precios que guardó el bot (todas las plataformas):", evaluate(recorded, capital, fee),
                          zone, "Esta es la prueba fiel; crece cada día que el bot corre.")
     lines.append("")
 
@@ -209,7 +209,7 @@ def backtest_text(settings: Settings, days: int, now: datetime | None = None,
         except Exception as exc:  # noqa: BLE001 - una plataforma rota no detiene a la otra
             logger.info("Historia %s no disponible: %s", name, exc)
             failed.append(name)
-    note = "Aproximado: precios de operaciones pasadas, no ofertas. Binance P2P no publica historia."
+    note = "Aproximado: precios de operaciones pasadas, no ofertas. Binance, Bybit y OKX P2P no publican historia."
     if failed:
         note += f" No respondió: {', '.join(failed)}."
     lines += result_text("2) Historia pública Buda vs CryptoMarket:", evaluate(merge(histories), capital, fee), zone, note)

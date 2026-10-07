@@ -160,3 +160,38 @@ def test_exempt_api_skips_robots(monkeypatch):
     s = _settings(respect_robots_txt=True)
     assert mr._allowed(mr.BUDA_URL, s, "buda") is True
     assert mr._allowed(mr.BUDA_URL, _settings(respect_robots_txt=True, robots_exempt_apis=""), "buda") is False
+
+
+class P2PSession:
+    def __init__(self):
+        self.calls = []
+
+    def post(self, url, json=None, **kw):  # Bybit
+        self.calls.append(("bybit", json["side"], json["amount"]))
+        price = {"1": "991.5", "0": "986.0"}[json["side"]]
+        return FakeResp({"ret_code": 0, "result": {"items": [{"price": price}, {"price": "1"}]}})
+
+    def get(self, url, params=None, **kw):  # OKX
+        self.calls.append(("okx", params["side"], params["quoteMinAmountPerOrder"]))
+        prices = {"sell": ["993", "992"], "buy": ["984", "985"]}[params["side"]]
+        return FakeResp({"code": 0, "data": {params["side"]: [{"price": p} for p in prices]}})
+
+
+def test_bybit_p2p():
+    session = P2PSession()
+    ref = mr.from_bybit(_settings(), session)
+    assert (ref.source, ref.bid, ref.ask) == ("Bybit P2P", 986.0, 991.5)
+    assert ("bybit", "1", "1000000") in session.calls
+
+
+def test_okx_p2p_takes_best_price_each_side():
+    ref = mr.from_okx(_settings(), P2PSession())
+    assert (ref.source, ref.bid, ref.ask) == ("OKX P2P", 985.0, 992.0)
+
+
+def test_p2p_without_ads_is_none():
+    class Empty(P2PSession):
+        def get(self, url, params=None, **kw):
+            return FakeResp({"code": 0, "data": {}})
+
+    assert mr.from_okx(_settings(), Empty()) is None
