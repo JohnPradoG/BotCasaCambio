@@ -65,7 +65,14 @@ def test_venues_text_shows_missing_platforms():
     settings = Settings(_env_file=None, usdt_venues="buda,binance,okx", crypto_assets="USDT")
     text = us.venues_text({"buda": BUDA, "binance": BINANCE}, settings)
     assert "✅ Buda.com: 978,00 / 975,00" in text and "❌ okx: no respondió" in text
-    assert "Mejor: comprar en Buda.com y vender en Binance P2P: +$7.157" in text
+    assert "Ganancia: comprar en Buda.com y vender en Binance P2P: +$7.157" in text
+
+
+def test_venues_text_hides_losing_combinations():
+    settings = Settings(_env_file=None, usdt_venues="buda,binance", crypto_assets="USDT")
+    worse = MarketRef("Binance P2P", bid=970, ask=990, url="u")
+    text = us.venues_text({"buda": BUDA, "binance": worse}, settings)
+    assert "Sin ganancia por ahora." in text and "−$" not in text
 
 
 def test_each_crypto_is_compared_only_with_itself(monkeypatch):

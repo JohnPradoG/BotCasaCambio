@@ -140,7 +140,7 @@ def spread_text(s: Spread) -> str:
 
 
 def venues_text(refs: dict[str, MarketRef], settings: Settings) -> str:
-    """``/usdt``: precio de cada cripto en cada plataforma, cuáles no respondieron y la mejor diferencia."""
+    """``/usdt``: precio de cada cripto en cada plataforma, cuáles no respondieron y la diferencia con ganancia (si hay)."""
     names = [s.strip().lower() for s in settings.usdt_venues.split(",") if s.strip()]
     if not names:
         return "La comparación de cripto está desactivada (USDT_VENUES vacío)."
@@ -155,9 +155,11 @@ def venues_text(refs: dict[str, MarketRef], settings: Settings) -> str:
         best = next((s for s in find_spreads({k: r for k, r in refs.items() if r.asset == asset},
                                              settings.initial_capital_clp, settings.usdt_fee_percent)
                      if s.buy_at is not s.sell_at), None)
-        if best:
-            lines.append(f"Mejor: comprar en {best.buy_at.source} y vender en {best.sell_at.source}: "
+        if best and best.profit_clp > 0:
+            lines.append(f"Ganancia: comprar en {best.buy_at.source} y vender en {best.sell_at.source}: "
                          f"{_clp(best.profit_clp)} con {_clp(best.capital)[1:]}")
+        else:
+            lines.append("Sin ganancia por ahora.")
     return "\n".join(lines)
 
 
