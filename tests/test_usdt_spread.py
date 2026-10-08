@@ -64,7 +64,7 @@ def test_fetch_all_skips_failing_venue(monkeypatch, tmp_path):
 def test_venues_text_shows_missing_platforms():
     settings = Settings(_env_file=None, usdt_venues="buda,binance,okx", crypto_assets="USDT")
     text = us.venues_text({"buda": BUDA, "binance": BINANCE}, settings)
-    assert "✅ Buda.com: 978,00 / 975,00" in text and "❌ okx: no respondió" in text
+    assert "✅ Buda.com: compras a 978,00 · vendes a 975,00" in text and "❌ okx: no respondió" in text
     assert "Ganancia: comprar en Buda.com y vender en Binance P2P: +$7.157" in text
 
 

@@ -48,6 +48,8 @@ HELP = (
     "/prueba: muestra una alerta de ejemplo y cuántas rutas reales hay ahora\n"
     "/usdt: precio de USDT, BTC, ETH y USDC en cada plataforma ahora\n"
     "/backtest: ganancia que hubo entre plataformas de USDT (ej. /backtest 7)\n"
+    "/p2p: a qué precio publicar cripto en Binance/OKX P2P y cuánto ganarías\n"
+    "/gane <monto>: anota lo que ganaste de verdad (ej. /gane 15000); /ganancias: tu total\n"
     "/actualizar: baja la última versión del bot y lo reinicia\n"
     "El bot solo calcula y avisa; nunca compra ni vende."
 )
@@ -68,6 +70,9 @@ class CommandHandlers:
     update: Callable[[], tuple[str, bool]] | None = None  # (respuesta, reiniciar)
     backtest: Callable[[int], str] | None = None  # días → resumen
     usdt: Callable[[], str] | None = None  # precios de cada plataforma ahora
+    p2p: Callable[[], str] | None = None  # anuncios P2P sugeridos
+    add_gain: Callable[[float, str], str] | None = None  # (monto, nota) → respuesta
+    gains: Callable[[], str] | None = None  # total ganado
 
 
 @dataclass
@@ -191,6 +196,18 @@ class TelegramCommandPoller:
                 return self.handlers.near()
             if command == "/usdt" and self.handlers.usdt:
                 return self.handlers.usdt()
+            if command == "/p2p" and self.handlers.p2p:
+                return self.handlers.p2p()
+            if command == "/gane" and self.handlers.add_gain:
+                parts = text.split(maxsplit=2)
+                amount = parts[1].replace(".", "").replace("$", "") if len(parts) > 1 else ""
+                try:
+                    value = float(amount.replace(",", "."))
+                except ValueError:
+                    return "Uso: /gane 15000 (lo que ganaste, en pesos; si perdiste: /gane -5000)"
+                return self.handlers.add_gain(value, parts[2] if len(parts) > 2 else "")
+            if command == "/ganancias" and self.handlers.gains:
+                return self.handlers.gains()
             if command == "/backtest" and self.handlers.backtest:
                 arg = text.split()[1] if len(text.split()) > 1 else "7"
                 if not arg.isdigit() or not 1 <= int(arg) <= 30:

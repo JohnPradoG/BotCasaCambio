@@ -234,6 +234,19 @@ ganancia: (1) con las lecturas que el bot guarda en `USDT_HISTORY_FILE` (fiel, i
 Binance) y (2) con la historia pública de Buda (operaciones) y CryptoMarket (velas de 15 min),
 que es aproximada porque son precios de operaciones pasadas, no ofertas.
 
+### Publicar cripto en P2P (`/p2p`)
+
+En P2P los compradores suelen pagar más que en los exchanges: el 2026-10-08 el anuncio de
+venta de BTC más barato en Binance P2P estaba 3,7 % sobre Buda/Notbank. `/p2p` calcula, por
+cripto, comprar en el exchange más barato (Buda, Notbank) y publicar un anuncio de venta en
+`P2P_PUBLISH_VENUES` (binance, okx) un `P2P_UNDERCUT_PERCENT` (0,1 %) bajo el más barato, y
+cuánto deja con el capital. Es ganancia posible: solo si alguien compra a ese precio. Muestra
+solo planes con ganancia; avisa solo si deja al menos `P2P_MIN_PROFIT_CLP` (10.000), cada
+cripto y plataforma como máximo cada `P2P_ALERT_COOLDOWN_HOURS` (4). Comisión de la
+plataforma P2P en `P2P_MAKER_FEE_PERCENT`; la comisión de retiro no se descuenta (el aviso lo
+dice). `/gane 15000` anota lo que se ganó de verdad en `P2P_LEDGER_FILE` y `/ganancias`
+muestra hoy, 7 días y total. Solo calcula; nunca publica, compra ni vende.
+
 ### Dólar de mercado (Binance P2P / Buda)
 
 `/precios` y las alertas muestran el precio del USDT/CLP como referencia del dólar de

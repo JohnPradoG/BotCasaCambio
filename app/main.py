@@ -248,6 +248,9 @@ def make_command_poller():
         update=_self_update,
         backtest=_backtest_text,
         usdt=_usdt_text,
+        p2p=_p2p_text,
+        add_gain=_add_gain,
+        gains=_gains_text,
     )
     return TelegramCommandPoller(settings, handlers)
 
@@ -300,6 +303,36 @@ def _usdt_text() -> str:
 
     settings = get_settings()
     return venues_text(fetch_all(settings, use_cache=False), settings)
+
+
+def _p2p_text() -> str:
+    from app.services.p2p_maker import plans_text
+    from app.services.usdt_spread import fetch_all
+
+    settings = get_settings()
+    return plans_text(fetch_all(settings, use_cache=False), settings)
+
+
+def _add_gain(amount: float, note: str) -> str:
+    from datetime import datetime, timezone
+    from zoneinfo import ZoneInfo
+
+    from app.services.p2p_maker import add_gain, gains_text
+
+    settings = get_settings()
+    now = datetime.now(timezone.utc)
+    add_gain(settings.p2p_ledger_file, amount, note, now)
+    return "Anotado ✅\n" + gains_text(settings.p2p_ledger_file, now, ZoneInfo(settings.timezone))
+
+
+def _gains_text() -> str:
+    from datetime import datetime, timezone
+    from zoneinfo import ZoneInfo
+
+    from app.services.p2p_maker import gains_text
+
+    settings = get_settings()
+    return gains_text(settings.p2p_ledger_file, datetime.now(timezone.utc), ZoneInfo(settings.timezone))
 
 
 def _backtest_text(days: int) -> str:
