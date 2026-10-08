@@ -68,6 +68,16 @@ class Settings(BaseSettings):
     # Cada lectura de USDT se guarda aquí para el backtesting (/backtest).
     usdt_history_file: str = str(DATA_DIR / "usdt_prices.csv")
 
+    # Vender cripto publicando un anuncio en P2P (/p2p): comprar en el exchange más barato y
+    # publicar un poco bajo el anuncio más barato. John lo pidió el 2026-10-08. Vacío = desactivado.
+    p2p_publish_venues: str = "binance,okx"
+    p2p_undercut_percent: float = Field(0.1, ge=0)  # cuánto bajo el anuncio más barato publicar
+    p2p_maker_fee_percent: float = Field(0, ge=0)  # comisión de la plataforma P2P al vender
+    p2p_min_profit_clp: float = Field(10000, ge=0)  # avisar solo si deja al menos esto con el capital
+    p2p_alert_cooldown_hours: float = Field(4, ge=0)
+    # Ganancias reales que John anota con /gane.
+    p2p_ledger_file: str = str(DATA_DIR / "ganancias.csv")
+
     # --- Comisiones estimadas manuales (si la casa no publica la suya) ---
     default_commission_percent: float | None = None
     default_commission_fixed_clp: float | None = None
