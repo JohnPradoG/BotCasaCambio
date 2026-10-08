@@ -63,11 +63,12 @@ def test_verification_messages_spec_20():
 
 def test_alert_format_spec_22():
     text = format_alert(routes(), directory(), 1_000_000)
-    assert text.startswith("🔥 ARBITRAJE DETECTADO")
-    assert "🥇 OPCIÓN #1" in text and "Ganancia estimada:" in text and "+$31.579 CLP" in text
-    assert "Dirección: Calle Falsa 1, Santiago" in text
-    assert "Teléfono: no publicado" in text  # Casa B
-    assert "⚠️ Confirmar precios y disponibilidad antes de desplazarse." in text
+    assert text.startswith("🔥 ARBITRAJE: +$31.579 con $1.000.000")
+    assert "1) Casa A (Centro): compra USD a 950,00 → 1.052,63 USD" in text
+    assert "Calle Falsa 1, Santiago" in text
+    assert "📞 Casa B: sin teléfono ni dirección publicados" in text
+    assert "⚠️ Confirma precio y disponibilidad antes de ir." in text
+    assert len(text.splitlines()) <= 15  # John: la alerta larga no se leía en Telegram
 
 
 def test_whatsapp_link_requires_number():
@@ -324,4 +325,4 @@ def test_old_published_price_is_used_with_warning():
     assert round(best.net_profit_clp) == 31_579  # misma ganancia: la antigüedad no cambia el ranking
     assert best.confidence == "LOW"
     text = format_alert([best], directory(), 1_000_000)
-    assert "📅 Casa A publicó su precio de USD hace 5 días. Puede seguir igual: confirma por teléfono antes de ir." in text
+    assert "📅 Casa A publicó su precio de USD hace 5 días: puede seguir igual, confírmalo." in text
