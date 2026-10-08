@@ -246,6 +246,8 @@ cripto y plataforma como máximo cada `P2P_ALERT_COOLDOWN_HOURS` (4). Comisión 
 plataforma P2P en `P2P_MAKER_FEE_PERCENT`; la comisión de retiro no se descuenta (el aviso lo
 dice). `/gane 15000` anota lo que se ganó de verdad en `P2P_LEDGER_FILE` y `/ganancias`
 muestra hoy, 7 días y total. Solo calcula; nunca publica, compra ni vende.
+El aviso llega una vez al día a las `P2P_REPORT_TIME` (08:30), para dejar el anuncio todo
+el día; los avisos durante el día solo con `P2P_INTRADAY_ALERTS=true`.
 
 ### Dólar de mercado (Binance P2P / Buda)
 

@@ -75,6 +75,9 @@ class Settings(BaseSettings):
     p2p_maker_fee_percent: float = Field(0, ge=0)  # comisión de la plataforma P2P al vender
     p2p_min_profit_clp: float = Field(10000, ge=0)  # avisar solo si deja al menos esto con el capital
     p2p_alert_cooldown_hours: float = Field(4, ge=0)
+    # John (2026-10-08): el aviso llega una vez en la mañana para dejar el anuncio todo el día.
+    p2p_report_time: str | None = "08:30"  # hora local; vacío = no enviar
+    p2p_intraday_alerts: bool = False  # además, avisar durante el día cuando aparezca un plan
     # Ganancias reales que John anota con /gane.
     p2p_ledger_file: str = str(DATA_DIR / "ganancias.csv")
 
