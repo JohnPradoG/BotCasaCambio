@@ -5,13 +5,13 @@ from app.services.self_test import example_alert, real_status
 def test_example_alert_is_labeled_and_profitable():
     text = example_alert(Settings(_env_file=None))
     assert text.startswith("🧪 PRUEBA: casas y precios INVENTADOS")
-    assert "🔥 ARBITRAJE DETECTADO" in text and "+$20.833" in text
+    assert "🔥 ARBITRAJE: +$" in text and "+$20.833" in text
     assert "Casa Ejemplo A" in text and "ejemplo_a" not in text
 
 
 def test_example_alert_survives_old_margins():
     text = example_alert(Settings(_env_file=None, safety_margin_percent=0.5, min_net_profit_clp=10_000))
-    assert "🔥 ARBITRAJE DETECTADO" in text
+    assert "🔥 ARBITRAJE: +$" in text
 
 
 def test_real_status_warns_about_old_settings():

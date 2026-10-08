@@ -84,71 +84,66 @@ def _ago(minutes: float) -> str:
     return f"hace {minutes / 1440:.0f} días"
 
 
+def _step_line(i: int, step, directory) -> str:
+    name = _house_name(directory, step.house) + (f" ({step.branch_used})" if step.branch_used else "")
+    if step.from_currency == "CLP":
+        action = f"compra {step.to_currency} a {units(step.rate)} → {units(step.amount_out)} {step.to_currency}"
+    elif step.to_currency == "CLP":
+        action = f"vende {step.from_currency} a {units(step.rate)} → {clp(step.amount_out)}"
+    else:
+        action = (f"cambia {step.from_currency} a {step.to_currency} a {units(step.rate)} → "
+                  f"{units(step.amount_out)} {step.to_currency}")
+    return f"{i}) {name}: {action}"
+
+
+def _houses(route: Route, directory) -> str:
+    names: list[str] = []
+    for step in route.route:
+        name = _house_name(directory, step.house)
+        if not names or names[-1] != name:
+            names.append(name)
+    return " → ".join(names)
+
+
+def _price_currency(step) -> str:
+    return step.from_currency if step.to_currency == "CLP" else step.to_currency
+
+
 def format_alert_route(route: Route, directory: dict[str, ExchangeHouse], detailed: bool = True) -> str:
-    medal = MEDALS.get(route.rank or 0, "•")
+    """Una ruta en pocas líneas (John, 2026-10-08: la alerta era muy larga para Telegram)."""
+    conf = CONF_ES.get(route.confidence or "", "sin calcular")
     if not detailed:
-        lines = [
-            f"{medal} OPCIÓN #{route.rank}",
-            f"Ganancia: {clp(route.net_profit_clp, sign=True)}",
-            f"Ruta: {' → '.join(route.currencies)}",
-            f"Distancia: {'desconocida' if route.distance_km is None else f'{route.distance_km:.1f} km'.replace('.', ',')}",
-            f"Tiempo: {'desconocido' if route.estimated_minutes is None else f'{route.estimated_minutes:.0f} min'}",
-            f"Confianza: {CONF_ES.get(route.confidence or '', 'sin calcular')}",
-        ]
-        return "\n".join(lines)
+        medal = MEDALS.get(route.rank or 0, "•")
+        return (f"{medal} {clp(route.net_profit_clp, sign=True)}: {_houses(route, directory)} "
+                f"({' → '.join(route.currencies)}) · {conf}")
 
-    lines = [
-        f"{medal} OPCIÓN #{route.rank}",
-        "",
-        "Ganancia estimada:",
-        f"{clp(route.net_profit_clp, sign=True)} CLP",
-        "",
-        "Capital final:",
-        f"{clp(route.net_final_clp)} CLP",
-        "",
-        "Ruta:",
-    ]
-    for i, step in enumerate(route.route):
-        if i:
-            lines += ["", "↓", ""]
-        name = _house_name(directory, step.house) + (f" ({step.branch_used})" if step.branch_used else "")
-        received = (f"CLP final: {clp(step.amount_out)}" if step.to_currency == "CLP"
-                    else f"{step.to_currency} recibido: {units(step.amount_out)}")
-        lines += [name, f"{step.from_currency} → {step.to_currency} a {units(step.rate)}", received]
-
-    ages = [s.quote_age_minutes for s in route.route]
-    lines += [
-        "",
-        f"Ganancia bruta: {clp(route.gross_profit_clp, sign=True)} · Comisiones: -{clp(route.commissions_clp)} · "
-        f"Margen: -{clp(route.safety_margin_clp)} · Transporte: -{clp(route.transport_clp)}",
-    ]
+    lines = [_step_line(i, step, directory) for i, step in enumerate(route.route, 1)]
+    costs = [(label, value) for label, value in (("comisiones", route.commissions_clp),
+                                                  ("margen", route.safety_margin_clp),
+                                                  ("transporte", route.transport_clp)) if value]
+    if costs:
+        lines.append(f"Bruto {clp(route.gross_profit_clp, sign=True)} · "
+                     + " · ".join(f"{label} -{clp(value)}" for label, value in costs))
     if route.alt_transport:
         a = route.alt_transport
-        lines.append(f"Si vas en {a['label']}: {clp(a['net_profit_clp'], sign=True)} CLP")
-    lines += [
-        "",
-        "Distancia total:",
-        "desconocida (faltan coordenadas)" if route.distance_km is None else f"{route.distance_km:.1f} km".replace(".", ","),
-        "",
-        "Tiempo estimado:",
-        "desconocido" if route.estimated_minutes is None else f"{route.estimated_minutes:.0f} min",
-        "",
-        "Cotizaciones:",
-        f"Actualizadas {_ago(min(ages))} a {_ago(max(ages))}" if ages else "sin datos",
-        "",
-        "Confianza:",
-        f"{CONF_ES.get(route.confidence or '', 'sin calcular')}"
-        + (f" ({route.confidence_score:.0f}/100)" if route.confidence_score is not None else ""),
-    ]
+        lines.append(f"Si vas en {a['label']}: {clp(a['net_profit_clp'], sign=True)}")
+    where = []
+    if route.distance_km is not None:
+        where.append(f"{route.distance_km:.1f} km".replace(".", ","))
+    if route.estimated_minutes is not None:
+        where.append(f"{route.estimated_minutes:.0f} min")
+    if where:
+        lines.append("📍 " + " · ".join(where))
+    lines.append(f"Confianza: {conf}"
+                 + (f" ({route.confidence_score:.0f}/100)" if route.confidence_score is not None else ""))
     for step in route.route:
         if step.quote_age_minutes > OLD_PRICE_MINUTES:
-            lines += ["", f"📅 {_house_name(directory, step.house)} publicó su precio de {step.from_currency if step.to_currency == 'CLP' else step.to_currency} "
-                          f"{_ago(step.quote_age_minutes)}. Puede seguir igual: confirma por teléfono antes de ir."]
+            lines.append(f"📅 {_house_name(directory, step.house)} publicó su precio de {_price_currency(step)} "
+                         f"{_ago(step.quote_age_minutes)}: puede seguir igual, confírmalo.")
     if route.executable_now is False:
-        lines += ["", "⏰ Alguna casa está cerrada ahora: oportunidad para más tarde."]
+        lines.append("⏰ Alguna casa está cerrada ahora: es para más tarde.")
     if route.requires_verification:
-        lines += ["", "🚩 Usa una cotización sospechosa (posible error de publicación)."]
-    lines += ["", "⚠️ Confirmar precios y disponibilidad antes de desplazarse."]
+        lines.append("🚩 Un precio parece error de publicación.")
 
     seen = set()
     for step in route.route:
@@ -157,27 +152,27 @@ def format_alert_route(route: Route, directory: dict[str, ExchangeHouse], detail
             continue
         seen.add(key)
         address, phone, wa = _contact(directory, step.house, step.branch_used)
-        lines += ["", f"{_house_name(directory, step.house)}:", f"Dirección: {address}", f"Teléfono: {phone}",
-                  f"WhatsApp: {wa}"]
-
-    lines += ["", "Mensajes para verificar:"]
-    for m in verification_messages(route, directory):
-        lines.append(f"{m['step']}. {m['house']}: \"{m['text']}\"")
-        if m["whatsapp_link"]:
-            lines.append(f"   {m['whatsapp_link']}")
+        known = [v for v in (phone if phone != "no publicado" else None,
+                             f"WhatsApp {wa}" if wa != "no publicado" and wa != phone else None,
+                             address if not address.startswith("no publicada") else None) if v]
+        lines.append(f"📞 {_house_name(directory, step.house)}: "
+                     + (" · ".join(known) if known else "sin teléfono ni dirección publicados"))
+    lines.append("⚠️ Confirma precio y disponibilidad antes de ir.")
     return "\n".join(lines)
 
 
 def format_alert(routes: list[Route], directory: dict[str, ExchangeHouse], initial_clp: float, market=None) -> str:
-    parts = ["🔥 ARBITRAJE DETECTADO", "", "Capital inicial:", f"{clp(initial_clp)} CLP", ""]
-    for i, route in enumerate(routes):
-        parts.append(format_alert_route(route, directory, detailed=(i == 0)))
-        parts.append("")
+    if not routes:
+        return "🔥 ARBITRAJE: sin rutas"
+    parts = [f"🔥 ARBITRAJE: {clp(routes[0].net_profit_clp, sign=True)} con {clp(initial_clp)}",
+             format_alert_route(routes[0], directory, detailed=True)]
+    if len(routes) > 1:
+        parts += ["", "Otras opciones:"] + [format_alert_route(r, directory, detailed=False) for r in routes[1:]]
     if market is not None:  # referencia del dólar digital; no cambia el cálculo de la ruta
         from app.services.market_reference import reference_line
 
-        parts.append(reference_line(market))
-    return "\n".join(parts).rstrip()
+        parts += ["", reference_line(market)]
+    return "\n".join(parts)
 
 
 def format_drop_alert(route_text: str, houses: str, notified_profit: float, current: Route | None,
