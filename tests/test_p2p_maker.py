@@ -51,6 +51,17 @@ def test_no_profit_message():
     assert "sin ganancia por ahora" in text
 
 
+def test_morning_once_a_day_from_report_time():
+    zone = ZoneInfo("America/Santiago")
+    morning = datetime(2026, 10, 8, 8, 30, tzinfo=zone)
+    assert pm.morning_due(morning, "08:30", None)
+    assert not pm.morning_due(morning.replace(hour=7), "08:30", None)
+    assert not pm.morning_due(morning.replace(hour=12), "08:30", "2026-10-08")
+    assert not pm.morning_due(morning, None, None)
+    assert "Buenos días" in pm.morning_text(REFS, SETTINGS) and "PUBLICAR BTC" in pm.morning_text(REFS, SETTINGS)
+    assert "no pude leer" in pm.morning_text({}, SETTINGS)
+
+
 def test_alert_threshold_and_cooldown():
     notifier, state = Notifier(), {}
     assert pm.check_p2p_plans(REFS, SETTINGS, notifier, NOW, state) == ["BTC:Binance P2P"]

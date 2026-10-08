@@ -136,7 +136,7 @@ def _usdt_spreads(settings: Settings, notifier) -> list[str]:
 
 
 def _p2p_plans(settings: Settings, notifier) -> list[str]:
-    if not settings.usdt_venues.strip() or not settings.p2p_publish_venues.strip():
+    if not settings.p2p_intraday_alerts or not settings.usdt_venues.strip() or not settings.p2p_publish_venues.strip():
         return []
     try:
         return check_p2p_plans(fetch_all(settings), settings, notifier, utcnow(), _p2p_alerted)

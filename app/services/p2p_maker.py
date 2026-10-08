@@ -134,6 +134,17 @@ def check_p2p_plans(refs: dict[str, MarketRef], settings: Settings, notifier, no
     return sent
 
 
+def morning_due(now_local: datetime, report_time: str | None, last_sent: str | None) -> bool:
+    """¿Toca mandar el aviso de la mañana? Una vez al día, desde ``P2P_REPORT_TIME``."""
+    return bool(report_time) and now_local.strftime("%H:%M") >= report_time and last_sent != now_local.date().isoformat()
+
+
+def morning_text(refs: dict[str, MarketRef], settings: Settings) -> str:
+    if not refs:
+        return "☀️ Buenos días. Hoy no pude leer los precios de las plataformas cripto; prueba /p2p más tarde."
+    return "☀️ Buenos días. Para publicar hoy en P2P:\n\n" + plans_text(refs, settings)
+
+
 # --------------------------------------------------------------- ganancias reales
 LEDGER_FIELDS = ["at", "amount_clp", "note"]
 

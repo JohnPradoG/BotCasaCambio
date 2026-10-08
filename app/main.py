@@ -274,6 +274,27 @@ def _near_text() -> str:
     return pairs_text(_near_pairs(), get_settings().initial_capital_clp, "🔎 Lo más cerca de un arbitraje ahora")
 
 
+def _maybe_send_p2p_morning(notifier) -> None:
+    """Una vez al día, desde P2P_REPORT_TIME, manda los anuncios P2P que convienen hoy."""
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    from app.services.p2p_maker import morning_due, morning_text
+    from app.services.usdt_spread import fetch_all
+
+    settings = get_settings()
+    now = datetime.now(ZoneInfo(settings.timezone))
+    marker = DATA_DIR / "p2p_morning_sent.txt"
+    try:
+        last = marker.read_text().strip()
+    except OSError:
+        last = None
+    if not settings.p2p_publish_venues.strip() or not morning_due(now, settings.p2p_report_time, last):
+        return
+    if notifier.send(morning_text(fetch_all(settings, use_cache=False), settings)):
+        marker.write_text(now.date().isoformat())
+
+
 def _near_miss_tick(notifier) -> None:
     """Guarda el mejor momento del día por divisa y, desde NEAR_MISS_REPORT_TIME, manda el resumen una vez."""
     from datetime import datetime
@@ -517,6 +538,10 @@ def cmd_loop(args) -> int:
             _maybe_send_price_request(make_notifier(get_settings()))
         except Exception:  # noqa: BLE001
             logger.exception("Error enviando el pedido diario de precios")
+        try:
+            _maybe_send_p2p_morning(make_notifier(get_settings()))
+        except Exception:  # noqa: BLE001
+            logger.exception("Error enviando el aviso P2P de la mañana")
         try:
             _near_miss_tick(make_notifier(get_settings()))
         except Exception:  # noqa: BLE001
