@@ -144,13 +144,13 @@ def venues_text(refs: dict[str, MarketRef], settings: Settings) -> str:
     names = [s.strip().lower() for s in settings.usdt_venues.split(",") if s.strip()]
     if not names:
         return "La comparación de cripto está desactivada (USDT_VENUES vacío)."
-    lines = ["💱 Cripto en pesos ahora (compras a / vendes a)"]
+    lines = ["💱 Cripto en pesos ahora (lo que pagas tú al comprar · lo que te pagan al vender)"]
     for asset in assets(settings):
         lines += ["", f"{asset}:"]
         for name in names:
             r = refs.get(ref_key(name, asset))
             why = last_errors.get(ref_key(name, asset))
-            lines.append(f"✅ {r.source}: {_rate(r.ask)} / {_rate(r.bid)}" if r
+            lines.append(f"✅ {r.source}: compras a {_rate(r.ask)} · vendes a {_rate(r.bid)}" if r
                          else f"❌ {name}: no respondió" + (f" ({why})" if why else ""))
         best = next((s for s in find_spreads({k: r for k, r in refs.items() if r.asset == asset},
                                              settings.initial_capital_clp, settings.usdt_fee_percent)
